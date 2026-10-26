@@ -101,8 +101,8 @@ def termsheet_story(spec, res, S=None, tmpdir=None) -> list:
     if spec.product == "warrant":
         return _warrant_story(spec, res, S, tmpdir)
 
-    cpn, part = res["coupon_used"], res["participation_used"]
-    info = identify(spec, cpn, part)
+    cpn = res["coupon_used"]
+    info = identify(spec, cpn)
     story = []
     story.append(Paragraph("FICHE PRODUIT INDICATIVE · générée automatiquement", S["small"]))
     story.append(Spacer(1, 3))
@@ -114,13 +114,9 @@ def termsheet_story(spec, res, S=None, tmpdir=None) -> list:
 
     # chiffres clés
     if res["solved"] is not None:
-        main = (pct(res["solved"]) + (" / an" if res["solved_which"] == "coupon" else ""),
-                ("Coupon résolu" if res["solved_which"] == "coupon" else "Participation résolue") +
-                f" pour un prix de {pct(spec.pricing.target_price)}")
-    elif spec.coupon.type != "none":
-        main = (pct(cpn) + " / an", "Coupon (donné)")
+        main = (pct(cpn) + " / an", f"Coupon résolu pour un prix de {pct(spec.pricing.target_price)}")
     else:
-        main = (pct(part), "Participation (donnée)")
+        main = (pct(cpn) + " / an", "Coupon (donné)")
     margin = 1 - res["fair_value"]
     story.append(kpi_row([
         main,
@@ -198,11 +194,6 @@ def termsheet_story(spec, res, S=None, tmpdir=None) -> list:
                      Paragraph(f"{100 * ch:+.2f} pts".replace(".", ","), S["cell"]),
                      Paragraph(inv, S["cell"]), Paragraph(bank, S["cell"])])
     story.append(grid_table(rows, [32 * mm, 26 * mm, 24 * mm, 46 * mm, CONTENT_W - 128 * mm]))
-    if res.get("option_values"):
-        txt = " · ".join(f"{k} : <b>{pct(v)}</b> du nominal" for k, v in res["option_values"].items())
-        story.append(Spacer(1, 4))
-        story.append(Paragraph("Valeur des options de remboursement anticipé (Longstaff-Schwartz) — " + txt,
-                               S["body"]))
 
     # statistiques
     stats = [("Probabilité de rappel anticipé", pct(1 - res["p_maturity"], 1)),
@@ -210,8 +201,6 @@ def termsheet_story(spec, res, S=None, tmpdir=None) -> list:
              ("Perte moyenne si perte", pct(res["avg_loss_given_loss"], 1)),
              ("Nombre moyen de coupons", f"{res['expected_coupons']:.1f}".replace(".", ",")),
              ("Probabilité de gain (total > 100 %)", pct(res["p_gain"], 1))]
-    if "avg_in_range" in res:
-        stats.append(("Temps moyen passé dans le corridor", pct(res["avg_in_range"], 1)))
     stats.append(("Erreur Monte Carlo (1 écart-type)", f"± {pct(res['stderr'])}"))
     story.append(Paragraph("Statistiques", S["h2"]))
     half = (len(stats) + 1) // 2
@@ -231,8 +220,8 @@ def _disclaimer(spec):
             + ("en volatilité locale de Dupire déduite d'un smile paramétrique (skew pris en compte), "
                if spec.has_skew else "dans un modèle de Black-Scholes à volatilité constante (sans skew), ")
             + f"corrélation constante, taux et dividendes déterministes. "
-            f"Actualisation au taux sans risque + spread émetteur. Options bermudéennes évaluées par "
-            f"Longstaff-Schwartz. Les paramètres de marché sont illustratifs.")
+            f"Actualisation au taux sans risque + spread émetteur. "
+            f"Les paramètres de marché sont illustratifs.")
 
 
 def _warrant_story(spec, res, S, tmpdir):

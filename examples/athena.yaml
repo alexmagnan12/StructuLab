@@ -4,7 +4,7 @@ notional: 1000
 maturity: 8
 frequency: annual
 underlyings:
-  - {name: Euro Stoxx 50, vol: 18%, div: 3.2%}
+  - {name: Euro Stoxx 50, vol: 18%, div: 3.2%, skew: -0.25, smile: 0.10}
 market: {rate: 2.5%, issuer_spread: 0.8%}
 coupon:
   type: snowball        # coupon cumulé payé seulement au rappel (ou à maturité si >= barrière)

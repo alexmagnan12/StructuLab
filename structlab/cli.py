@@ -25,20 +25,17 @@ def summary(spec, res) -> str:
                   f"  Prix d'un warrant : {w['warrant_price']:.4f} {spec.currency}  |  levier x{w['leverage']:.1f}"
                   f"  |  point mort {w['breakeven']:.0f}"]
         return "\n".join(lines)
-    info = identify(spec, res["coupon_used"], res["participation_used"])
+    info = identify(spec, res["coupon_used"])
     lines.append(f"Produit identifié : {info['name']}")
     lines.append("  Caractéristiques : " + ", ".join(info["tags"]))
     lines.append("  Décomposition :")
     for s, b, _ in info["decomposition"]:
         lines.append(f"     {s} {b}")
     if res["solved"] is not None:
-        lab = "Coupon résolu" if res["solved_which"] == "coupon" else "Participation résolue"
-        lines.append(f"  {lab} : {pct(res['solved'])}  (prix cible {pct(spec.pricing.target_price)})")
+        lines.append(f"  Coupon résolu : {pct(res['solved'])}  (prix cible {pct(spec.pricing.target_price)})")
     lines.append(f"  Valeur théorique : {pct(res['fair_value'])} ± {pct(res['stderr'])}")
     lines.append(f"  Durée de vie moyenne : {res['expected_life']:.2f} ans".replace(".", ",") + " | P(rappel anticipé) "
                  + f"{pct(1 - res['p_maturity'], 1)} | P(perte) {pct(res['p_loss'], 1)}")
-    for k, v in res.get("option_values", {}).items():
-        lines.append(f"  {k} : {pct(v)}")
     return "\n".join(lines)
 
 

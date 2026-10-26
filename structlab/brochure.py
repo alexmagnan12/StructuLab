@@ -232,19 +232,12 @@ def build(out="output/StructLab_en_3_pages.pdf"):
     st.append(Paragraph("Les produits que l'outil sait traiter", S["h2"]))
     prods = [("Phoenix", "coupons sous condition, avec ou sans mémoire"),
              ("Athena", "coupons accumulés, versés à la sortie"),
-             ("Autocall", "remboursement anticipé automatique"),
-             ("Range Accrual", "coupon selon le temps passé dans un couloir"),
-             ("Twin Win", "gain à la hausse comme à la baisse"),
              ("Reverse Convertible", "coupon élevé contre un risque de baisse"),
-             ("Note à capital protégé", "capital garanti + part de la hausse"),
              ("Warrant", "option cotée avec effet de levier")]
     half = len(prods) // 2
     rows = [[Paragraph(f"<b>{a}</b> — {b}", S["cell"]), Paragraph(f"<b>{c}</b> — {d}", S["cell"])]
             for (a, b), (c, d) in zip(prods[:half], prods[half:])]
     st.append(grid_table(rows, [CONTENT_W / 2] * 2, header=False))
-    st.append(Spacer(1, 3))
-    st.append(Paragraph("Chacun peut recevoir des options en plus : remboursement au choix de l'émetteur (callable) "
-                        "ou au choix de l'investisseur (puttable).", S["body"]))
     st.append(Spacer(1, 8))
     st.append(Paragraph("Document pédagogique. Les paramètres de marché (volatilités, skew, taux, dividendes) sont "
                         "illustratifs ; les chiffres viennent d'une simulation de 20 000 scénarios de marché.",

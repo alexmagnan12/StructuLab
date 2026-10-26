@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import FuncFormatter, PercentFormatter
 
-from .engine import AUTOCALL, HOLDER_PUT, ISSUER_CALL
 
 INK = "#1B2433"
 MUTED = "#6B7385"
@@ -71,8 +70,6 @@ def sample_paths(spec, res, path, n=14):
         ax.step(obs, lv, where="post", color=BLUE, lw=1.4, label="Barrière de rappel")
     if spec.coupon.type == "conditional":
         ax.axhline(spec.coupon.barrier, color=AMBER, lw=1.2, label="Barrière coupon")
-    if spec.coupon.type == "range_accrual":
-        ax.axhspan(spec.coupon.lower, spec.coupon.upper, color=TEAL, alpha=0.12, label="Corridor")
     if spec.redemption.barrier is not None:
         ax.axhline(spec.redemption.barrier, color=RED, lw=1.2, ls="--", label="Barrière capital")
     for x in obs:
@@ -81,7 +78,7 @@ def sample_paths(spec, res, path, n=14):
     ax.set_xlabel("Années")
     if ax.get_legend_handles_labels()[0]:
         ax.legend(loc="upper left", ncol=2)
-    kind = {"worst_of": "worst-of", "best_of": "best-of", "average": "panier"}.get(spec.basket, spec.basket_label)
+    kind = "worst-of" if spec.n_assets > 1 else spec.underlyings[0].name
     ax.set_title(f"Trajectoires simulées ({kind})")
     return _save(fig, path)
 
@@ -92,12 +89,10 @@ def lifetime(spec, res, path):
     fig, ax = plt.subplots(figsize=(FIG_W, FIG_H))
     bottom = np.zeros(n)
     width = 0.7 / spec.frequency
-    for code, col, lab in ((AUTOCALL, BLUE, "Rappel automatique"), (ISSUER_CALL, AMBER, "Rappel émetteur"),
-                           (HOLDER_PUT, TEAL, "Revente investisseur")):
-        if code in res["early_probs"]:
-            p = res["early_probs"][code]
-            ax.bar(t, p, width, bottom=bottom, color=col, label=lab)
-            bottom += p
+    if spec.autocall:
+        p = res["early_probs"]
+        ax.bar(t, p, width, color=BLUE, label="Rappel automatique")
+        bottom += p
     p_mat_ok = res["p_maturity"] - res["p_loss"]
     ax.bar(t[-1] + 1.3 * width, p_mat_ok, width, color=LIGHT, label="Maturité sans perte")
     ax.bar(t[-1] + 1.3 * width, res["p_loss"], width, bottom=p_mat_ok, color=RED, label="Maturité avec perte")

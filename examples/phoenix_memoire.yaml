@@ -11,7 +11,6 @@ underlyings:
   - {name: S&P 500,       vol: 17%, div: 1.4%, skew: -0.28, smile: 0.10}
   - {name: Nikkei 225,    vol: 20%, div: 1.9%, skew: -0.22, smile: 0.08}
 correlation: 0.65
-basket: worst_of
 
 market:
   rate: 2.5%

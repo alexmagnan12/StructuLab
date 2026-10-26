@@ -1,88 +1,52 @@
-"""Simulation Monte Carlo : sous-jacents lognormaux corrélés (Black-Scholes multi-actifs)."""
+"""Simulation Monte Carlo des indices (corrélés), avec ou sans skew."""
 from __future__ import annotations
 
 import numpy as np
 
-from .spec import Spec
-
-
-def correlation_matrix(spec: Spec) -> np.ndarray:
-    n = spec.n_assets
-    c = spec.correlation
-    if isinstance(c, (int, float)):
-        m = np.full((n, n), float(c))
-        np.fill_diagonal(m, 1.0)
-    else:
-        m = np.array(c, dtype=float)
-    return m
-
 
 def local_vol(k, t, atm, skew, smile):
-    """Volatilité locale de Dupire déduite d'un smile paramétrique
-    sigma_imp(k) = atm + skew*k + smile*k^2 (k = ln(S/F), identique pour toutes les maturités).
-    Formule de Dupire écrite en variance totale w = sigma_imp^2 * t (Gatheral)."""
+    """Vol locale de Dupire déduite du smile vol(k) = atm + skew*k + smile*k^2
+    (formule de Dupire écrite en variance totale w = vol^2 * t)."""
     sig = np.maximum(atm + skew * k + smile * k * k, 0.03)
-    d1 = skew + 2 * smile * k                     # dsigma/dk
-    d2 = 2 * smile                                # d2sigma/dk2
+    d1 = skew + 2 * smile * k            # dérivée du smile
+    d2 = 2 * smile                       # dérivée seconde
     w = sig * sig * t
     wk = 2 * t * sig * d1
     wkk = 2 * t * (d1 * d1 + sig * d2)
     denom = 1 - k * wk / w + 0.25 * (-0.25 - 1 / w + k * k / (w * w)) * wk * wk + 0.5 * wkk
-    lv2 = sig * sig / np.maximum(denom, 0.05)
-    return np.sqrt(np.clip(lv2, 0.03 ** 2, 1.5 ** 2))
+    return np.sqrt(np.clip(sig * sig / np.maximum(denom, 0.05), 0.03 ** 2, 1.5 ** 2))
 
 
-def simulate_basket(spec: Spec, vol_bump: float = 0.0, corr_bump: float = 0.0,
-                    div_bump: float = 0.0, rate_bump: float = 0.0,
-                    n_paths: int | None = None, seed: int | None = None):
-    """Renvoie (temps, B) où B[p, j] est la performance du panier (worst-of, etc.)
-    en base 1 à la date j de la grille de surveillance.
-
-    La même graine donne les mêmes aléas : les sensibilités sont calculées à
-    nombres aléatoires communs (bruit Monte Carlo quasi nul sur les écarts)."""
-    n_paths = n_paths or spec.pricing.paths
-    seed = spec.pricing.seed if seed is None else seed
-    spy = spec.pricing.steps_per_year
+def simulate_basket(spec, vol_bump=0.0, corr_bump=0.0, div_bump=0.0, rate_bump=0.0):
+    """Renvoie (temps, B) : B[p, j] = niveau du worst-of (base 1) sur la trajectoire p au pas j."""
+    n_paths, spy = spec.pricing.paths, spec.pricing.steps_per_year
     n_steps = int(round(spec.maturity * spy))
     dt = 1.0 / spy
     n = spec.n_assets
 
-    vols = np.array([u.vol + vol_bump for u in spec.underlyings])
-    divs = np.array([u.div + div_bump for u in spec.underlyings])
-    r = spec.rate + rate_bump
-    corr = correlation_matrix(spec)
-    if n > 1 and corr_bump:
-        corr = np.clip(corr + corr_bump, -0.99, 0.99)
-        np.fill_diagonal(corr, 1.0)
-    chol = np.linalg.cholesky(corr)
-
-    drift = (r - divs - 0.5 * vols ** 2) * dt
-    diff = vols * np.sqrt(dt)
-    use_lv = spec.has_skew
+    vols = np.array([u.vol for u in spec.underlyings]) + vol_bump
+    divs = np.array([u.div for u in spec.underlyings]) + div_bump
     skews = np.array([u.skew for u in spec.underlyings])
     smiles = np.array([u.smile for u in spec.underlyings])
+    r = spec.rate + rate_bump
 
-    rng = np.random.default_rng(seed)
+    rho = min(spec.correlation + corr_bump, 0.99)
+    corr = np.full((n, n), rho)
+    np.fill_diagonal(corr, 1.0)
+    chol = np.linalg.cholesky(corr)
+
+    rng = np.random.default_rng(spec.pricing.seed)   # même graine = mêmes scénarios
     logS = np.zeros((n_paths, n))
-    B = np.empty((n_paths, n_steps + 1))
-    B[:, 0] = 1.0
+    B = np.ones((n_paths, n_steps + 1))
     half = (n_paths + 1) // 2
     for j in range(1, n_steps + 1):
         z = rng.standard_normal((half, n))
-        z = np.vstack([z, -z])[:n_paths]          # variables antithétiques
-        if use_lv:
-            t = (j - 0.5) * dt
-            k = logS - (r - divs) * (j - 1) * dt          # log-moneyness par rapport au forward
-            sig = local_vol(k, t, vols, skews, smiles)
-            logS += (r - divs - 0.5 * sig ** 2) * dt + (z @ chol.T) * sig * np.sqrt(dt)
+        z = np.vstack([z, -z])[:n_paths] @ chol.T     # antithétiques + corrélation
+        if spec.has_skew:
+            k = logS - (r - divs) * (j - 1) * dt      # distance au forward
+            sig = local_vol(k, (j - 0.5) * dt, vols, skews, smiles)
         else:
-            logS += drift + (z @ chol.T) * diff
-        perf = np.exp(logS)
-        if spec.basket in ("worst_of", "single"):
-            B[:, j] = perf.min(axis=1)
-        elif spec.basket == "best_of":
-            B[:, j] = perf.max(axis=1)
-        else:
-            B[:, j] = perf.mean(axis=1)
-    times = np.arange(n_steps + 1) * dt
-    return times, B
+            sig = vols
+        logS += (r - divs - 0.5 * sig ** 2) * dt + sig * np.sqrt(dt) * z
+        B[:, j] = np.exp(logS).min(axis=1)            # worst-of (ou l'indice seul)
+    return np.arange(n_steps + 1) * dt, B
