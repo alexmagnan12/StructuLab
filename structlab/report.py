@@ -19,10 +19,19 @@ from . import charts
 from .identify import identify, pct, risk_reading
 from .spec import FREQ_LABEL
 
-FONT_DIR = "/usr/share/fonts/truetype/dejavu"
-pdfmetrics.registerFont(TTFont("Sans", os.path.join(FONT_DIR, "DejaVuSans.ttf")))
-pdfmetrics.registerFont(TTFont("Sans-Bold", os.path.join(FONT_DIR, "DejaVuSans-Bold.ttf")))
-pdfmetrics.registerFont(TTFont("Mono", os.path.join(FONT_DIR, "DejaVuSansMono.ttf")))
+def _font(name):
+    """Cherche la police DejaVu (Linux, ou celle fournie par matplotlib sur Mac / Windows)."""
+    import matplotlib
+    for d in ("/usr/share/fonts/truetype/dejavu", os.path.join(matplotlib.get_data_path(), "fonts", "ttf")):
+        p = os.path.join(d, name)
+        if os.path.exists(p):
+            return p
+    raise FileNotFoundError(name)
+
+
+pdfmetrics.registerFont(TTFont("Sans", _font("DejaVuSans.ttf")))
+pdfmetrics.registerFont(TTFont("Sans-Bold", _font("DejaVuSans-Bold.ttf")))
+pdfmetrics.registerFont(TTFont("Mono", _font("DejaVuSansMono.ttf")))
 pdfmetrics.registerFontFamily("Sans", normal="Sans", bold="Sans-Bold", italic="Sans", boldItalic="Sans-Bold")
 
 INK = colors.HexColor("#1B2433")

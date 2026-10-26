@@ -8,7 +8,14 @@ Tu décris un payoff, et l'outil :
 3. le **price** en Monte Carlo et **résout le coupon** (ou la participation) pour un prix cible ;
 4. génère une **mini term sheet PDF** avec les scénarios, les probabilités, les sensibilités et la position de risque de la banque.
 
-## Installation
+## Utiliser l'outil sans rien installer (GitHub Codespaces)
+
+1. Sur la page du dépôt, cliquez sur **Code → Codespaces → Create codespace on main**.
+2. Attendez une à deux minutes : un éditeur s'ouvre dans le navigateur et les librairies s'installent automatiquement.
+3. Dans le terminal en bas de l'écran, tapez `python -m structlab examples/phoenix_memoire.yaml`.
+4. Ouvrez la fiche générée dans le dossier `output/`, dans le panneau de gauche.
+
+## Installation sur son ordinateur
 
 ```bash
 pip install numpy scipy matplotlib pyyaml reportlab
