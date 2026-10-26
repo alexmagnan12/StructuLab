@@ -91,7 +91,7 @@ PLAIN_BRICKS = [
     ("+", "Une obligation zéro-coupon", "pour rembourser le capital à l'échéance."),
     ("+", "Une digitale par trimestre", "qui paie le coupon si l'indice le plus faible est au-dessus de 65 %."),
     ("±", "Le rappel automatique", "qui arrête le produit dès que le marché est assez haut."),
-    ("−", "Un put à barrière vendu par le client", "si j'ai bien compris, c'est ce qui finance le coupon."),
+    ("−", "Un put à barrière vendu par le client", "c'est ce qui finance le coupon."),
 ]
 
 PLAIN_RISK = {
@@ -126,10 +126,11 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     st.append(Paragraph(f"{AUTHOR} · {DATE}", S["sub"]))
     st.append(Spacer(1, 10))
     st.append(Paragraph(
-        "J'apprends la structuration en ce moment, et pour m'entraîner j'ai essayé de construire un petit outil : "
-        "à partir d'une description en français, il tente de retrouver le produit, de le décomposer et d'estimer le "
-        "coupon. C'est un projet d'apprentissage, avec sûrement des simplifications et des erreurs. J'ai été aidé "
-        "par un assistant IA pour le code ; j'ai surtout cherché à comprendre chaque étape.", ParagraphStyleBig(S)))
+        "Pour préparer mes entretiens en structuration, j'ai construit un outil qui part d'une description en "
+        "français, retrouve le produit, le décompose en briques et calcule le coupon qu'on peut offrir. C'est un "
+        "projet d'apprentissage, avec des simplifications assumées. J'ai été aidé par un assistant IA pour le "
+        "code ; j'ai défini ce que l'outil devait faire et je me suis assuré de comprendre chaque étape.",
+        ParagraphStyleBig(S)))
     st.append(Spacer(1, 10))
     st.append(flow_diagram())
 
@@ -151,7 +152,7 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
                                 ("LINEABOVE", (0, 0), (-1, 0), 1.6, ACCENT)]))
     st.append(answer)
     st.append(Spacer(1, 6))
-    st.append(Paragraph("<b>Comment je comprends sa décomposition</b>, côté client :", S["body"]))
+    st.append(Paragraph("<b>Comment il se décompose</b>, côté client :", S["body"]))
     st.append(Spacer(1, 3))
     rows = []
     for sign, title, txt in PLAIN_BRICKS:
@@ -168,7 +169,7 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     st.append(PageBreak())
 
     # ------------------------------------------------------------- page 3
-    st.append(Paragraph("Ce qui m'a surpris : l'effet du skew", S["h1"]))
+    st.append(Paragraph("Ce que le projet m'a appris : l'effet du skew", S["h1"]))
     st.append(Spacer(1, 4))
     st.append(Paragraph(
         "Ma première version utilisait la même volatilité pour tous les strikes. J'ai ensuite ajouté un skew, "
@@ -179,7 +180,7 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     st.append(Image(img, width=wd, height=wd * charts.FIG_H / charts.FIG_W))
     st.append(Spacer(1, 4))
     st.append(Paragraph(
-        "Je m'attendais à un effet sur le coupon, mais pas à un écart aussi grand :", S["body"]))
+        "Je m'attendais à un effet sur le coupon ; l'écart est plus important que je ne le pensais :", S["body"]))
     st.append(Spacer(1, 5))
     hdr = [Paragraph(x, S["cellb"]) for x in ("", "Sans skew", "Avec skew")]
     rows = [hdr,
@@ -196,16 +197,16 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     st.append(grid_table(rows, [80 * mm, 40 * mm, CONTENT_W - 120 * mm]))
     st.append(Spacer(1, 5))
     st.append(Paragraph(
-        "Mon interprétation : le client vend une protection à 60 %, là où la volatilité est la plus élevée, donc "
-        "cette protection vaut plus cher et laisse plus de budget pour le coupon ; et le produit serait plus souvent "
-        "rappelé tôt. Mais mon smile garde la même pente pour toutes les maturités, donc je pense que l'écart est "
-        "exagéré, et je ne sais pas bien en mesurer l'ampleur réelle.", S["body"]))
+        "Deux effets l'expliquent. Le client vend une protection à 60 %, là où la volatilité implicite est la plus "
+        "élevée : cette protection vaut plus cher et libère du budget pour le coupon. Et comme la volatilité baisse "
+        "quand le marché monte, le produit est plus souvent rappelé tôt. Mon smile garde la même pente pour toutes "
+        "les maturités, ce qui exagère probablement l'écart ; le sens de l'effet, lui, est clair.", S["body"]))
 
-    st.append(Paragraph("Les questions que je me pose encore", S["h2"]))
-    for q in ["L'ordre de grandeur de l'effet du skew sur le coupon est-il réaliste pour ce type de Phoenix ?",
-              "Comment le skew est-il pris en compte en pratique : vol locale, vol stochastique, autre chose ?",
-              "Parmi mes simplifications (smile, taux et dividendes fixes, corrélation constante), "
-              "laquelle fausse le plus le résultat ?"]:
+    st.append(Paragraph("Ce que j'aimerais approfondir", S["h2"]))
+    for q in ["Mesurer l'ampleur réelle de l'effet du skew, avec une vraie nappe de volatilité par maturité.",
+              "Comparer vol locale et vol stochastique sur ce type de produit, qui dépend beaucoup du skew futur.",
+              "Identifier laquelle de mes simplifications (smile, taux et dividendes fixes, corrélation constante) "
+              "pèse le plus sur le coupon."]:
         st.append(Paragraph("• " + q, S["body"]))
         st.append(Spacer(1, 2))
     st.append(Spacer(1, 6))
