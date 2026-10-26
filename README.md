@@ -4,7 +4,7 @@ Je suis étudiant, actuellement en stage chez Convera où je travaille sur le pr
 
 J'ai lancé ce projet pour préparer mes entretiens. En lisant *Exotic Options and Hybrids* (Bouzoubaa & Osseiran), je voulais vérifier que je savais vraiment faire ce qu'on attend d'un structureur : partir des règles d'un produit, le décomposer en briques simples, puis comprendre d'où vient le coupon et quels risques prend la banque.
 
-L'outil fonctionne ainsi : on décrit un produit (coupon, rappel, barrière...), il reconnaît de quel produit il s'agit, le décompose, calcule le coupon qu'on peut offrir pour une marge donnée et génère une fiche produit en PDF. Ce qui m'a le plus appris, c'est l'effet du skew : sur un Phoenix worst-of, le coupon passe d'environ 7 % à 11 % quand on en tient compte.
+L'outil fonctionne ainsi : on décrit un produit en français (coupon, rappel, barrière...), il reconnaît de quel produit il s'agit, le décompose, calcule le coupon qu'on peut offrir pour une marge donnée et génère une term sheet d'une page. Ce qui m'a le plus appris, c'est l'effet du skew : sur un Phoenix worst-of, le coupon passe d'environ 7 % à 11 % quand on en tient compte.
 
 Il prolonge mon projet précédent de [pricing d'options par différences finies](https://github.com/alexmagnan12/option-pricing-finite-differences). J'ai développé le code avec l'aide d'un assistant IA ; j'ai défini ce que l'outil devait faire et travaillé à comprendre chaque étape.
 
