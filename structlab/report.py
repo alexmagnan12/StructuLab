@@ -95,6 +95,24 @@ def _money(x, cur):
 
 
 # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# Term sheet simple : une page
+# ----------------------------------------------------------------------
+SCEN_LABELS = {"Hausse rapide": "Le marché monte", "Baisse modérée": "Le marché baisse de 15 %",
+               "Krach": "Krach de 55 %"}
+
+
+def _header(title, subtitle, request, S):
+    out = [Paragraph("TERM SHEET INDICATIVE", S["small"]), Spacer(1, 3), Paragraph(esc(title), S["h1"]),
+           Paragraph(esc(subtitle), S["sub"]), Spacer(1, 8)]
+    return out + request_box(request, S)
+
+
+def _rows(rows, S, w=38):
+    return grid_table([[Paragraph(a, S["cellb"]), Paragraph(esc(b), S["cell"])] for a, b in rows],
+                      [w * mm, CONTENT_W - w * mm], header=False)
+
+
 def termsheet_story(spec, res, S=None, tmpdir=None, request=None) -> list:
     S = S or styles()
     tmpdir = tmpdir or tempfile.mkdtemp()
@@ -103,126 +121,50 @@ def termsheet_story(spec, res, S=None, tmpdir=None, request=None) -> list:
 
     cpn = res["coupon_used"]
     info = identify(spec, cpn)
-    story = []
-    story.append(Paragraph("FICHE PRODUIT INDICATIVE · générée automatiquement", S["small"]))
-    story.append(Spacer(1, 3))
-    story.append(Paragraph(info["name"], S["h1"]))
-    story.append(Paragraph(esc(f"{spec.basket_label} · {spec.maturity:g} ans · {spec.currency}"), S["sub"]))
-    story.append(Spacer(1, 4))
-    story.append(Paragraph("  ·  ".join(info["tags"]), S["tag"]))
-    story.append(Spacer(1, 8))
-    story += request_box(request, S)
+    st = _header(info["name"], f"{', '.join(u.name for u in spec.underlyings)} · {spec.maturity:g} ans", request, S)
 
-    # chiffres clés
-    if res["solved"] is not None:
-        main = (pct(cpn) + " / an", f"Coupon résolu pour un prix de {pct(spec.pricing.target_price)}")
-    else:
-        main = (pct(cpn) + " / an", "Coupon (donné)")
+    label = "Coupon calculé" if res["solved"] is not None else "Coupon"
     margin = 1 - res["fair_value"]
-    story.append(kpi_row([
-        main,
-        (pct(res["fair_value"]), f"Valeur théorique (marge implicite {pct(margin)})"),
-        (f"{res['expected_life']:.1f} ans".replace(".", ","), "Durée de vie moyenne"),
-        (pct(res["p_loss"], 1), "Probabilité de perte en capital"),
-    ], S))
+    st.append(kpi_row([(pct(cpn) + " / an", label),
+                       (f"{res['expected_life']:.1f} ans".replace(".", ","), "Durée de vie moyenne"),
+                       (pct(res["p_loss"], 0), "Risque de perte en capital"),
+                       (pct(margin, 1), "Marge de la banque")], S))
 
-    # caractéristiques
-    story.append(Paragraph("Caractéristiques", S["h2"]))
-    und = "<br/>".join(f"{esc(u.name)} — vol {pct(u.vol, 0)}, div. {pct(u.div, 1)}" for u in spec.underlyings)
-    rows = [["Émetteur", spec.issuer], ["Nominal", _money(spec.notional, spec.currency)],
-            ["Sous-jacent(s)", und],
-            ["Maturité / observations", f"{spec.maturity:g} ans · {FREQ_LABEL.get(spec.frequency)} "
-                                        f"({spec.n_obs} dates)"],
-            ["Marché (hypothèses)", f"taux {pct(spec.rate)}, spread émetteur {pct(spec.issuer_spread)}"
-             + (f", corrélation {pct(spec.correlation, 0)}" if spec.n_assets > 1 and
-                isinstance(spec.correlation, (int, float)) else "")]]
-    if spec.pricing.target_price is not None:
-        rows.append(["Prix d'émission cible", pct(spec.pricing.target_price)])
-    story.append(grid_table([[Paragraph(a, S["cellm"]), Paragraph(b, S["cell"])] for a, b in rows],
-                            [42 * mm, CONTENT_W - 42 * mm], header=False))
+    st.append(Paragraph("Le produit", S["h2"]))
+    rows = [(a, b) for a, b in info["mechanism"] if a not in ("Observation", "Risque émetteur")]
+    rows.insert(0, ("Durée", f"{spec.maturity:g} ans, une date d'observation par "
+                             + {1: "an", 2: "semestre", 4: "trimestre", 12: "mois"}[spec.frequency]
+                             + (" ; on regarde le sous-jacent le moins performant" if spec.n_assets > 1 else "")))
+    st.append(_rows(rows, S))
 
-    story.append(Paragraph("Fonctionnement", S["h2"]))
-    story.append(grid_table([[Paragraph(a, S["cellb"]), Paragraph(esc(b), S["cell"])] for a, b in info["mechanism"]],
-                            [36 * mm, CONTENT_W - 36 * mm], header=False))
-
-    story.append(Paragraph("Décomposition en briques élémentaires (vue investisseur)", S["h2"]))
-    rows = [[Paragraph("", S["cellb"]), Paragraph("Brique", S["cellb"]), Paragraph("Rôle", S["cellb"])]]
-    for sign, brick, expl in info["decomposition"]:
+    st.append(Paragraph("Ce qu'il y a dedans", S["h2"]))
+    for sign, brick, _ in info["decomposition"]:
         col = GOOD if sign == "+" else BAD if sign == "−" else MUTED
-        rows.append([Paragraph(f'<font color="{col.hexval()}"><b>{sign}</b></font>', S["cell"]),
-                     Paragraph(esc(brick), S["cell"]), Paragraph(esc(expl), S["cellm"])])
-    story.append(grid_table(rows, [7 * mm, 72 * mm, CONTENT_W - 79 * mm]))
+        st.append(Paragraph(f'<font color="{col.hexval()}"><b>{sign}</b></font>  {esc(brick)}', S["body"]))
 
-    story.append(Paragraph("Profil et vue de marché", S["h2"]))
-    rows = [["Investisseur cible", info["profile"]], ["Vue de marché", info["view"]],
-            ["Environnement favorable", info["environment"]]]
-    story.append(grid_table([[Paragraph(a, S["cellm"]), Paragraph(b, S["cell"])] for a, b in rows],
-                            [42 * mm, CONTENT_W - 42 * mm], header=False))
-
-    story.append(PageBreak())
-
-    # graphiques
-    w = CONTENT_W / 2 - 2 * mm
-    h = w * charts.FIG_H / charts.FIG_W
-    imgs = [charts.maturity_profile(spec, res, os.path.join(tmpdir, "c1.png")),
-            charts.sample_paths(spec, res, os.path.join(tmpdir, "c2.png")),
-            charts.lifetime(spec, res, os.path.join(tmpdir, "c3.png")),
-            charts.payout_hist(spec, res, os.path.join(tmpdir, "c4.png"))]
-    im = [Image(p, width=w, height=h) for p in imgs]
-    gt = Table([[im[0], im[1]], [im[2], im[3]]], colWidths=[CONTENT_W / 2] * 2)
-    gt.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                            ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
-    story.append(Paragraph("Analyse Monte Carlo", S["h2"]))
-    story.append(gt)
-
-    # scénarios
-    story.append(Paragraph("Scénarios illustratifs (trajectoires déterministes du sous-jacent)", S["h2"]))
-    rows = [[Paragraph(x, S["cellb"]) for x in ("Scénario", "Fin de vie", "Coupons", "Capital", "Total")]]
+    w = CONTENT_W * 0.52
+    img = charts.maturity_profile(spec, res, os.path.join(tmpdir, "p.png"))
+    rows = [[Paragraph(x, S["cellb"]) for x in ("Si…", "Le client récupère")]]
     for name, sc in res["scenarios"].items():
-        col = GOOD.hexval() if sc["total"] >= 1 else BAD.hexval()
-        rows.append([Paragraph(name, S["cell"]), Paragraph(sc["fin"], S["cellm"]),
-                     Paragraph(pct(sc["coupons"]), S["cell"]), Paragraph(pct(sc["remboursement"]), S["cell"]),
-                     Paragraph(f'<font color="{col}"><b>{pct(sc["total"])}</b></font>', S["cell"])])
-    story.append(grid_table(rows, [58 * mm, 52 * mm, 22 * mm, 22 * mm, CONTENT_W - 154 * mm]))
+        key = name.split(" (")[0]
+        if key not in SCEN_LABELS:
+            continue
+        col = GOOD if sc["total"] >= 1 else BAD
+        rows.append([Paragraph(SCEN_LABELS[key], S["cell"]),
+                     Paragraph(f'<font color="{col.hexval()}"><b>{pct(sc["total"])}</b></font>'
+                               f'<br/><font color="{MUTED.hexval()}">{sc["fin"].split(" (")[0]}</font>', S["cell"])])
+    scen = grid_table(rows, [36 * mm, CONTENT_W - w - 36 * mm - 6 * mm])
+    st.append(Paragraph("À l'échéance et en exemples", S["h2"]))
+    t = Table([[Image(img, width=w, height=w * charts.FIG_H / charts.FIG_W), scen]],
+              colWidths=[w + 6 * mm, CONTENT_W - w - 6 * mm])
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
+    st.append(t)
 
-    # sensibilités
-    story.append(Paragraph("Sensibilités et position de risque", S["h2"]))
-    rows = [[Paragraph(x, S["cellb"]) for x in ("Paramètre", "Choc", "Impact valeur", "Investisseur",
-                                                 "Banque (avant couverture)")]]
-    for label, unit, ch in res["sensitivities"]:
-        inv, bank = risk_reading(label, ch)
-        rows.append([Paragraph(label, S["cell"]), Paragraph(unit, S["cellm"]),
-                     Paragraph(f"{100 * ch:+.2f} pts".replace(".", ","), S["cell"]),
-                     Paragraph(inv, S["cell"]), Paragraph(bank, S["cell"])])
-    story.append(grid_table(rows, [32 * mm, 26 * mm, 24 * mm, 46 * mm, CONTENT_W - 128 * mm]))
-
-    # statistiques
-    stats = [("Probabilité de rappel anticipé", pct(1 - res["p_maturity"], 1)),
-             ("Probabilité d'aller à maturité", pct(res["p_maturity"], 1)),
-             ("Perte moyenne si perte", pct(res["avg_loss_given_loss"], 1)),
-             ("Nombre moyen de coupons", f"{res['expected_coupons']:.1f}".replace(".", ",")),
-             ("Probabilité de gain (total > 100 %)", pct(res["p_gain"], 1))]
-    stats.append(("Erreur Monte Carlo (1 écart-type)", f"± {pct(res['stderr'])}"))
-    story.append(Paragraph("Statistiques", S["h2"]))
-    half = (len(stats) + 1) // 2
-    left, right = stats[:half], stats[half:] + [("", "")] * (2 * half - len(stats))
-    rows = [[Paragraph(a, S["cellm"]), Paragraph(b, S["cellb"]), Paragraph(c, S["cellm"]), Paragraph(d, S["cellb"])]
-            for (a, b), (c, d) in zip(left, right)]
-    story.append(grid_table(rows, [52 * mm, 30 * mm, 60 * mm, CONTENT_W - 142 * mm], header=False))
-    story.append(Spacer(1, 6))
-    story.append(Paragraph(_disclaimer(spec), S["small"]))
-    return story
-
-
-def _disclaimer(spec):
-    n_paths = f"{spec.pricing.paths:,}".replace(",", " ")
-    return (f"Document pédagogique, sans valeur contractuelle. Valorisation Monte Carlo ({n_paths} "
-            f"trajectoires, pas de {spec.pricing.steps_per_year} par an) "
-            + ("en volatilité locale de Dupire déduite d'un smile paramétrique (skew pris en compte), "
-               if spec.has_skew else "dans un modèle de Black-Scholes à volatilité constante (sans skew), ")
-            + f"corrélation constante, taux et dividendes déterministes. "
-            f"Actualisation au taux sans risque + spread émetteur. "
-            f"Les paramètres de marché sont illustratifs.")
+    st.append(Spacer(1, 10))
+    st.append(Paragraph("Document pédagogique, sans valeur contractuelle. Coupon et probabilités calculés sur 20 000 "
+                        "scénarios de marché simulés, avec des paramètres de marché illustratifs. Le remboursement "
+                        "dépend aussi de la solvabilité de l'émetteur.", S["small"]))
+    return st
 
 
 def request_box(request, S):
@@ -237,50 +179,33 @@ def request_box(request, S):
 
 
 def _warrant_story(spec, res, S, tmpdir, request=None):
-    from .identify import identify
     w = res["warrant"]
     info = identify(spec)
     u = spec.underlyings[0]
-    story = [Paragraph("FICHE PRODUIT INDICATIVE · générée automatiquement", S["small"]), Spacer(1, 3),
-             Paragraph(info["name"] + f" sur {u.name}", S["h1"]),
-             Paragraph(f"Strike {w['strike']:,.0f}".replace(",", " ")
-                       + f" · maturité {spec.maturity:g} an · parité {spec.warrant.parity:g}".replace(".", ","),
-                       S["sub"]), Spacer(1, 8)] + request_box(request, S)
-    story.append(kpi_row([(_money(w["warrant_price"], spec.currency), "Prix théorique d'un warrant"),
-                          (f"× {w['leverage']:.1f}".replace(".", ","), "Effet de levier (élasticité)"),
-                          (f"{w['breakeven']:,.0f}".replace(",", " "), "Point mort à maturité"),
-                          (pct(w["prob_itm"], 1), "Probabilité (risque-neutre) de finir dans la monnaie")], S))
-    story.append(Paragraph("Fonctionnement", S["h2"]))
-    story.append(grid_table([[Paragraph(a, S["cellb"]), Paragraph(b, S["cell"])] for a, b in info["mechanism"]],
-                            [36 * mm, CONTENT_W - 36 * mm], header=False))
-    story.append(Paragraph("Décomposition", S["h2"]))
-    story.append(grid_table([[Paragraph(s_, S["cellb"]), Paragraph(b, S["cell"]), Paragraph(e, S["cellm"])]
-                             for s_, b, e in info["decomposition"]], [7 * mm, 72 * mm, CONTENT_W - 79 * mm],
-                            header=False))
-    img = charts.warrant_curves(spec, res, os.path.join(tmpdir, "w1.png"))
-    wd = CONTENT_W * 0.62
-    story.append(Spacer(1, 6))
-    story.append(Image(img, width=wd, height=wd * charts.FIG_H / charts.FIG_W))
-    story.append(Paragraph("Grecques (pour une option, avant parité)", S["h2"]))
-    rows = [[Paragraph(x, S["cellb"]) for x in ("Delta", "Gamma", "Vega (+1 pt)", "Theta (par jour)",
-                                                 "Valeur temps")],
-            [Paragraph(f"{w['delta']:.3f}", S["cell"]), Paragraph(f"{w['gamma']:.5f}", S["cell"]),
-             Paragraph(f"{w['vega']:.2f}", S["cell"]), Paragraph(f"{w['theta']:.2f}", S["cell"]),
-             Paragraph(f"{w['time_value']:.2f}", S["cell"])]]
-    story.append(grid_table(rows, [CONTENT_W / 5] * 5))
-    story.append(Paragraph("Scénarios à maturité", S["h2"]))
-    rows = [[Paragraph(x, S["cellb"]) for x in ("Scénario", "Payoff par option", "Rendement sur la prime")]]
+    st = _header(f"{info['name']} sur {u.name}", f"{spec.maturity:g} an".replace(".", ",") + f" · parité "
+                 f"{spec.warrant.parity:g}", request, S)
+    st.append(kpi_row([(_money(w["warrant_price"], spec.currency), "Prix d'un warrant"),
+                       (f"× {w['leverage']:.1f}".replace(".", ","), "Effet de levier"),
+                       (f"{w['breakeven']:,.0f}".replace(",", " "), "Point mort à l'échéance")], S))
+    st.append(Paragraph("Le produit", S["h2"]))
+    st.append(_rows(info["mechanism"], S))
+    img = charts.warrant_curves(spec, res, os.path.join(tmpdir, "w.png"))
+    wd = CONTENT_W * 0.52
+    rows = [[Paragraph(x, S["cellb"]) for x in ("Si à l'échéance…", "Gain / perte")]]
     for name, sc in res["scenarios"].items():
-        col = GOOD.hexval() if sc["pnl"] >= 0 else BAD.hexval()
-        rows.append([Paragraph(name, S["cell"]), Paragraph(f"{sc['payoff']:,.1f}".replace(",", " "), S["cell"]),
-                     Paragraph(f'<font color="{col}"><b>{100 * sc["pnl"]:+.0f} %</b></font>'.replace("-", "−"), S["cell"])])
-    story.append(grid_table(rows, [70 * mm, 50 * mm, CONTENT_W - 120 * mm]))
-    story.append(Spacer(1, 4))
-    story.append(Paragraph(info["profile"] + " " + info["environment"], S["body"]))
-    story.append(Spacer(1, 8))
-    story.append(Paragraph("Document pédagogique, sans valeur contractuelle. Prix de Black-Scholes à volatilité "
-                           "constante ; paramètres de marché illustratifs.", S["small"]))
-    return story
+        col = GOOD if sc["pnl"] >= 0 else BAD
+        rows.append([Paragraph(name.replace(" à maturité", ""), S["cell"]),
+                     Paragraph(f'<font color="{col.hexval()}"><b>{100 * sc["pnl"]:+.0f} %</b></font>'
+                               .replace("-", "−"), S["cell"])])
+    t = Table([[Image(img, width=wd, height=wd * charts.FIG_H / charts.FIG_W),
+                grid_table(rows, [40 * mm, CONTENT_W - wd - 46 * mm])]], colWidths=[wd + 6 * mm, CONTENT_W - wd - 6 * mm])
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
+    st.append(Paragraph("En exemples", S["h2"]))
+    st.append(t)
+    st.append(Spacer(1, 10))
+    st.append(Paragraph("Document pédagogique, sans valeur contractuelle. Prix de Black-Scholes avec des paramètres "
+                        "de marché illustratifs. La perte maximale est le prix payé.", S["small"]))
+    return st
 
 
 def _footer(canvas, doc):

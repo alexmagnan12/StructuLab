@@ -114,7 +114,7 @@ def analyze_warrant(spec):
     for mv in (-0.20, -0.10, 0.0, 0.10, 0.20):
         ST = S * (1 + mv)
         pay = max(ST - K, 0) if typ == "call" else max(K - ST, 0)
-        scen[f"Sous-jacent {100 * mv:+.0f} % à maturité".replace("-", "−")] = {
+        scen[f"Sous-jacent {100 * mv:+.0f} % à maturité".replace(" -", " −")] = {
             "payoff": pay, "pnl": pay / w["option_price"] - 1}
     return {"spec": spec, "warrant": w, "fair_value": w["warrant_price"], "scenarios": scen,
             "curves": (grid, {"Valeur aujourd'hui": today, "Valeur à mi-vie": half, "Payoff à maturité": payoff})}
