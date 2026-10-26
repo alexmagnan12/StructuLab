@@ -1,0 +1,4 @@
+Produit 5 ans sur l'Euro Stoxx 50, le S&P 500 et le Nikkei 225, observé chaque trimestre, corrélation 65 %.
+Coupon versé si le moins performant des trois est au-dessus de 65 %, avec effet mémoire.
+Remboursement anticipé à partir de 1 an si le moins performant est au-dessus de 100 %, barrière dégressive de 1 % par trimestre jusqu'à 80 %.
+À l'échéance, capital protégé jusqu'à une baisse de 40 %. Marge de 2 %.

@@ -19,18 +19,29 @@ Présentation en 3 pages : [output/StructLab_en_3_pages.pdf](output/StructLab_en
 
 Le skew peut être pris en compte (vol locale déduite d'un smile simple).
 
-## Lancer l'outil
+## Utilisation
+
+On décrit le produit **en français**, sans donner son nom :
 
 ```
-pip install -r requirements.txt
-python -m structlab examples/phoenix_memoire.yaml
+python -m structlab "Produit 5 ans sur le CAC 40, coupon versé chaque trimestre si le CAC est au-dessus de 70 %, remboursement anticipé à partir de 1 an si le CAC est au-dessus de 100 %, capital protégé jusqu'à une baisse de 40 %"
 ```
 
-La fiche PDF est créée dans `output/`. Pour tester un autre produit, copiez un fichier de `examples/` et modifiez ses paramètres.
+L'outil affiche ce qu'il a compris (et les valeurs par défaut qu'il a prises), reconnaît le produit, le décompose, calcule le coupon et crée la term sheet dans `output/`.
 
-Sans rien installer : bouton **Code → Codespaces → Create codespace**, puis la même commande dans le terminal.
+Autres façons de l'utiliser :
 
-## Décrire un produit
+```
+python -m structlab                                   # mode interactif : on tape la description
+python -m structlab examples/textes/phoenix.txt       # description dans un fichier texte
+python -m structlab examples/phoenix_memoire.yaml     # description détaillée, paramètre par paramètre
+```
+
+Ce que l'outil sait lire dans le texte : les sous-jacents (principaux indices et quelques actions), la durée, la fréquence d'observation, le coupon (fixe, conditionnel, avec mémoire, accumulé), le remboursement anticipé (niveau, première date, barrière dégressive), la protection du capital (niveau, observée à l'échéance ou en continu), la marge et la corrélation. Si un coupon est donné sans marge, l'outil calcule la valeur du produit ; sinon il cherche le coupon qui respecte la marge (2 % par défaut).
+
+Installation : `pip install -r requirements.txt`. Sans rien installer : bouton **Code → Codespaces → Create codespace**, puis les mêmes commandes dans le terminal.
+
+## Décrire un produit en détail (fichier YAML)
 
 ```
 maturity: 5

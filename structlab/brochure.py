@@ -6,6 +6,7 @@ import tempfile
 
 import matplotlib.pyplot as plt
 import numpy as np
+from xml.sax.saxutils import escape as esc
 from reportlab.graphics.shapes import Drawing, Line, Polygon, Rect, String
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
@@ -16,15 +17,17 @@ from .analytics import analyze
 from .identify import identify, pct, risk_reading
 from .report import (ACCENT, BAD, CONTENT_W, GOOD, INK, LINE, MARGIN, MUTED, PANEL, _footer, grid_table, kpi_row,
                      styles)
-from .spec import load_spec
+from .parser import parse_text
+from .report import request_box
+from .spec import spec_from_dict
 
 AUTHOR = "Alexandre Magnan-Dupont"
 DATE = "Octobre 2026"
-EXAMPLE = "examples/phoenix_memoire.yaml"
+EXAMPLE = "examples/textes/phoenix.txt"
 
 
 def flow_diagram():
-    steps = ["Je décris\nle payoff", "L'outil reconnaît\nle produit", "Il le décompose\nen briques",
+    steps = ["J'écris le produit\nen français", "L'outil reconnaît\nle produit", "Il le décompose\nen briques",
              "Il calcule le coupon\net fait la fiche"]
     W, H = CONTENT_W, 22 * mm
     d = Drawing(W, H)
@@ -106,9 +109,11 @@ PLAIN_RISK = {
 def build(out="output/StructLab_en_3_pages.pdf"):
     S = styles()
     tmp = tempfile.mkdtemp()
-    spec = load_spec(EXAMPLE)
+    text = open(EXAMPLE, encoding="utf-8").read().strip()
+    d, understood, _ = parse_text(text)
+    spec = spec_from_dict(d)
     res = analyze(spec)
-    flat = load_spec(EXAMPLE)
+    flat = spec_from_dict(d)
     for u in flat.underlyings:
         u.skew = u.smile = 0.0
     res_flat = analyze(flat, with_sensitivities=False)
@@ -123,17 +128,19 @@ def build(out="output/StructLab_en_3_pages.pdf"):
     st.append(Paragraph(f"{AUTHOR} · {DATE}", S["sub"]))
     st.append(Spacer(1, 10))
     st.append(Paragraph(
-        "On décrit simplement ce que fait un produit structuré. L'outil dit <b>ce que c'est</b>, <b>de quoi il est "
+        "On décrit un produit structuré en français, comme dans un mail. L'outil dit <b>ce que c'est</b>, <b>de quoi il est "
         "fait</b>, <b>combien il peut rapporter</b> et <b>ce qui peut mal tourner</b>, puis il prépare une fiche "
         "produit.", ParagraphStyleBig(S)))
     st.append(Spacer(1, 10))
     st.append(flow_diagram())
 
-    st.append(Paragraph("Exemple : ce que je donne à l'outil", S["h2"]))
-    st.append(grid_table([[Paragraph(a, S["cellb"]), Paragraph(b, S["cell"])] for a, b in plain_terms(spec, cpn)],
-                         [36 * mm, CONTENT_W - 36 * mm], header=False))
+    st.append(Paragraph("Exemple : ce que j'écris", S["h2"]))
+    st += request_box(text.replace("\n", " "), S)[:1]
     st.append(Spacer(1, 2))
     st.append(Paragraph("Je ne donne jamais le nom du produit : seulement ses règles.", S["small"]))
+    st.append(Paragraph("Ce que l'outil a compris", S["h2"]))
+    st.append(grid_table([[Paragraph(a, S["cellb"]), Paragraph(esc(b), S["cell"])] for a, b in understood],
+                         [36 * mm, CONTENT_W - 36 * mm], header=False))
 
     st.append(Paragraph("Ce que l'outil répond", S["h2"]))
     answer = Table([[Paragraph("Produit reconnu", S["kpi_l"]), Paragraph("Coupon calculé", S["kpi_l"])],

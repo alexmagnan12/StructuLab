@@ -141,8 +141,11 @@ def _make(cls, d, pct_fields=()):
 
 def load_spec(path):
     with open(path, encoding="utf-8") as fh:
-        d = yaml.safe_load(fh)
+        return spec_from_dict(yaml.safe_load(fh))
 
+
+def spec_from_dict(d):
+    d = copy.deepcopy(d)
     unders = [Underlying(name=u["name"], vol=pct(u["vol"]), div=pct(u.get("div", 0)) or 0.0, spot=u.get("spot"),
                          skew=float(u.get("skew", 0)), smile=float(u.get("smile", 0)))
               for u in d.pop("underlyings")]

@@ -95,11 +95,11 @@ def _money(x, cur):
 
 
 # ----------------------------------------------------------------------
-def termsheet_story(spec, res, S=None, tmpdir=None) -> list:
+def termsheet_story(spec, res, S=None, tmpdir=None, request=None) -> list:
     S = S or styles()
     tmpdir = tmpdir or tempfile.mkdtemp()
     if spec.product == "warrant":
-        return _warrant_story(spec, res, S, tmpdir)
+        return _warrant_story(spec, res, S, tmpdir, request)
 
     cpn = res["coupon_used"]
     info = identify(spec, cpn)
@@ -111,6 +111,7 @@ def termsheet_story(spec, res, S=None, tmpdir=None) -> list:
     story.append(Spacer(1, 4))
     story.append(Paragraph("  ·  ".join(info["tags"]), S["tag"]))
     story.append(Spacer(1, 8))
+    story += request_box(request, S)
 
     # chiffres clés
     if res["solved"] is not None:
@@ -224,7 +225,18 @@ def _disclaimer(spec):
             f"Les paramètres de marché sont illustratifs.")
 
 
-def _warrant_story(spec, res, S, tmpdir):
+def request_box(request, S):
+    """Encadré qui rappelle la demande écrite en français."""
+    if not request:
+        return []
+    t = Table([[Paragraph("Demande", S["kpi_l"])], [Paragraph(esc(request.strip()), S["body"])]],
+              colWidths=[CONTENT_W])
+    t.setStyle(TableStyle([("LINEBEFORE", (0, 0), (0, -1), 1.6, ACCENT), ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                           ("TOPPADDING", (0, 0), (-1, -1), 2), ("BOTTOMPADDING", (0, -1), (-1, -1), 4)]))
+    return [t, Spacer(1, 8)]
+
+
+def _warrant_story(spec, res, S, tmpdir, request=None):
     from .identify import identify
     w = res["warrant"]
     info = identify(spec)
@@ -233,7 +245,7 @@ def _warrant_story(spec, res, S, tmpdir):
              Paragraph(info["name"] + f" sur {u.name}", S["h1"]),
              Paragraph(f"Strike {w['strike']:,.0f}".replace(",", " ")
                        + f" · maturité {spec.maturity:g} an · parité {spec.warrant.parity:g}".replace(".", ","),
-                       S["sub"]), Spacer(1, 8)]
+                       S["sub"]), Spacer(1, 8)] + request_box(request, S)
     story.append(kpi_row([(_money(w["warrant_price"], spec.currency), "Prix théorique d'un warrant"),
                           (f"× {w['leverage']:.1f}".replace(".", ","), "Effet de levier (élasticité)"),
                           (f"{w['breakeven']:,.0f}".replace(",", " "), "Point mort à maturité"),
@@ -280,9 +292,9 @@ def _footer(canvas, doc):
     canvas.restoreState()
 
 
-def build_termsheet(spec, res, out_path):
+def build_termsheet(spec, res, out_path, request=None):
     doc = SimpleDocTemplate(out_path, pagesize=A4, leftMargin=MARGIN, rightMargin=MARGIN,
                             topMargin=14 * mm, bottomMargin=16 * mm, title="Fiche produit",
                             author="StructLab")
-    doc.build(termsheet_story(spec, res), onFirstPage=_footer, onLaterPages=_footer)
+    doc.build(termsheet_story(spec, res, request=request), onFirstPage=_footer, onLaterPages=_footer)
     return out_path

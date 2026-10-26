@@ -1,0 +1,3 @@
+Produit 8 ans sur le CAC 40 : chaque année, si le CAC 40 est au-dessus de son niveau initial,
+le produit est remboursé avec un coupon de 7 % par année écoulée (coupons accumulés).
+Capital protégé jusqu'à 60 % à l'échéance. Marge de 2 %.

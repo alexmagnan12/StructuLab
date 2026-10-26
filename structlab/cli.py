@@ -1,8 +1,9 @@
 """Ligne de commande.
 
-    python -m structlab examples/phoenix_memoire.yaml            # analyse + fiche PDF
-    python -m structlab examples/phoenix_memoire.yaml -o out.pdf
-    python -m structlab examples/*.yaml --no-pdf                 # résumé console uniquement
+    python -m structlab                                   # mode interactif : on tape la description
+    python -m structlab "Phoenix 5 ans sur le CAC 40, coupon si le CAC est au-dessus de 70 %..."
+    python -m structlab examples/textes/phoenix.txt       # description dans un fichier texte
+    python -m structlab examples/phoenix_memoire.yaml     # description détaillée (YAML)
 """
 from __future__ import annotations
 
@@ -13,7 +14,8 @@ import sys
 from .analytics import analyze
 from .identify import identify, pct
 from .report import build_termsheet
-from .spec import load_spec
+from .parser import ParseError, parse_text
+from .spec import load_spec, spec_from_dict
 
 
 def summary(spec, res) -> str:
@@ -39,30 +41,71 @@ def summary(spec, res) -> str:
     return "\n".join(lines)
 
 
+def _slug(name):
+    import re
+    import unicodedata
+    t = unicodedata.normalize("NFKD", name)
+    t = "".join(c for c in t if not unicodedata.combining(c)).lower()
+    return re.sub(r"[^a-z0-9]+", "_", t).strip("_")
+
+
+def run(spec, label, out=None, outdir="output", request=None, pdf=True):
+    res = analyze(spec)
+    print(summary(spec, res))
+    if pdf:
+        info = identify(spec, res.get("coupon_used"))
+        out = out or os.path.join(outdir, _slug(info["name"] if request else label) + ".pdf")
+        os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
+        build_termsheet(spec, res, out, request=request)
+        print(f"\n  Term sheet : {out}")
+
+
+def run_text(text, out=None, outdir="output", pdf=True):
+    try:
+        d, understood, assumed = parse_text(text)
+    except ParseError as e:
+        print(f"Je n'ai pas compris : {e}")
+        return 1
+    print("\nCe que j'ai compris :")
+    for k, v in understood:
+        print(f"  • {k} : {v}")
+    if assumed:
+        print("Valeurs par défaut (non précisées dans le texte) :")
+        for a in assumed:
+            print(f"  • {a}")
+    print()
+    run(spec_from_dict(d), "produit", out, outdir, request=text, pdf=pdf)
+    return 0
+
+
 def main(argv=None):
-    ap = argparse.ArgumentParser(prog="structlab", description="Identifie, décompose et price un produit structuré "
-                                                                "décrit par ses caractéristiques (YAML).")
-    ap.add_argument("files", nargs="+", help="fichier(s) YAML décrivant le payoff")
-    ap.add_argument("-o", "--output", help="chemin du PDF (un seul fichier en entrée)")
+    ap = argparse.ArgumentParser(
+        prog="structlab",
+        description="Décrivez un produit structuré en français : l'outil le reconnaît, le décompose, "
+                    "calcule le coupon et génère une term sheet.")
+    ap.add_argument("entree", nargs="*", help="la description en texte (entre guillemets), un fichier .txt, "
+                                              "ou un fichier .yaml ; rien = mode interactif")
+    ap.add_argument("-o", "--output", help="chemin du PDF")
     ap.add_argument("--outdir", default="output", help="dossier des PDF (défaut : output/)")
     ap.add_argument("--no-pdf", action="store_true", help="n'affiche que le résumé")
-    ap.add_argument("--paths", type=int, help="nombre de trajectoires Monte Carlo")
     a = ap.parse_args(argv)
 
-    for f in a.files:
-        spec = load_spec(f)
-        if a.paths:
-            spec.pricing.paths = a.paths
-        res = analyze(spec)
+    if not a.entree:
+        print("Décrivez le produit (sous-jacents, durée, coupon, rappel, protection...), puis appuyez sur Entrée :")
+        return run_text(input("> "), a.output, a.outdir, not a.no_pdf)
+
+    files = [e for e in a.entree if os.path.isfile(e)]
+    if not files:                                   # du texte libre
+        return run_text(" ".join(a.entree), a.output, a.outdir, not a.no_pdf)
+    for f in files:
         print("=" * 72)
-        print(f"{os.path.basename(f)}")
-        print(summary(spec, res))
-        if not a.no_pdf:
-            out = a.output if (a.output and len(a.files) == 1) else os.path.join(
-                a.outdir, os.path.splitext(os.path.basename(f))[0] + ".pdf")
-            os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
-            build_termsheet(spec, res, out)
-            print(f"  Fiche produit : {out}")
+        print(os.path.basename(f))
+        if f.endswith(".txt"):
+            run_text(open(f, encoding="utf-8").read(), a.output if len(files) == 1 else None, a.outdir,
+                     not a.no_pdf)
+        else:
+            run(load_spec(f), os.path.splitext(os.path.basename(f))[0], a.output if len(files) == 1 else None,
+                a.outdir, pdf=not a.no_pdf)
     return 0
 
 
