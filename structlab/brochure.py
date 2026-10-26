@@ -123,7 +123,9 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     st.append(Paragraph("STRUCTULAB · PROJET PERSONNEL", S["small"]))
     st.append(Spacer(1, 4))
     st.append(Paragraph("Un petit outil pour m'entraîner sur les produits structurés", S["h1"]))
-    st.append(Paragraph(f"{AUTHOR} · {DATE}", S["sub"]))
+    st.append(Paragraph(f"{AUTHOR} · {DATE} · "
+                        f'<link href="https://github.com/alexmagnan12/StructuLab" color="#2F5D9E">'
+                        f"github.com/alexmagnan12/StructuLab</link>", S["sub"]))
     st.append(Spacer(1, 10))
     st.append(Paragraph(
         "Pour préparer mes entretiens en structuration, j'ai construit un outil qui part d'une description en "
