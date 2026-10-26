@@ -1,0 +1,22 @@
+# Phoenix callable : pas de rappel automatique, c'est l'émetteur qui décide de rembourser
+notional: 1000
+maturity: 5
+frequency: quarterly
+underlyings:
+  - {name: Euro Stoxx Banks, vol: 26%, div: 6.0%}
+  - {name: Euro Stoxx 50,    vol: 18%, div: 3.2%}
+correlation: 0.75
+market: {rate: 2.5%, issuer_spread: 0.8%}
+coupon:
+  type: conditional
+  rate: 10%
+  barrier: 60%
+  memory: true
+redemption:
+  type: barrier
+  barrier: 50%
+  monitoring: european
+callable:
+  start: 4          # l'émetteur peut rappeler chaque trimestre à partir de 1 an
+  price: 100%
+pricing: {target_price: 98%}

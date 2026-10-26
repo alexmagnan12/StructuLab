@@ -1,0 +1,10 @@
+# Warrant call sur le CAC 40
+product: warrant
+maturity: 0.5
+underlyings:
+  - {name: CAC 40, spot: 7500, vol: 17%, div: 3.0%}
+market: {rate: 2.5%}
+warrant:
+  type: call
+  strike: 105%      # 7 875 points
+  parity: 100       # 100 warrants pour 1 indice

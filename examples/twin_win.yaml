@@ -1,0 +1,14 @@
+# Twin Win : on gagne à la hausse ET à la baisse tant que la barrière n'est pas touchée
+notional: 1000
+maturity: 4
+frequency: annual
+underlyings:
+  - {name: Euro Stoxx 50, vol: 18%, div: 3.2%}
+market: {rate: 2.5%, issuer_spread: 0.8%}
+redemption:
+  type: twin_win
+  barrier: 65%
+  monitoring: american
+  participation: 100%   # sera résolue (aucun coupon) pour atteindre le prix cible
+  down_participation: 100%
+pricing: {target_price: 98%}

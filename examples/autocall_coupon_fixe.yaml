@@ -1,0 +1,20 @@
+# Autocall à coupon fixe, barrière dégressive, protection américaine
+notional: 1000
+maturity: 6
+frequency: semiannual
+underlyings:
+  - {name: CAC 40, vol: 19%, div: 3.0%}
+market: {rate: 2.5%, issuer_spread: 0.8%}
+coupon:
+  type: fixed           # coupon garanti tant que le produit vit
+  rate: 5%
+autocall:
+  barrier: 100%
+  start: 2
+  stepdown: 2.5%
+  floor: 75%
+redemption:
+  type: barrier
+  barrier: 55%
+  monitoring: american  # barrière observée en continu (approximation hebdomadaire)
+pricing: {target_price: 98%}

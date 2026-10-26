@@ -1,0 +1,40 @@
+# Phoenix Mémoire Worst-of sur 3 indices
+# On décrit uniquement les caractéristiques du payoff : l'outil identifie le produit.
+notional: 1000
+currency: EUR
+maturity: 5
+frequency: quarterly
+
+underlyings:
+  # vol = vol ATM ; skew / smile = pente et courbure du smile (0 = pas de skew)
+  - {name: Euro Stoxx 50, vol: 18%, div: 3.2%, skew: -0.25, smile: 0.10}
+  - {name: S&P 500,       vol: 17%, div: 1.4%, skew: -0.28, smile: 0.10}
+  - {name: Nikkei 225,    vol: 20%, div: 1.9%, skew: -0.22, smile: 0.08}
+correlation: 0.65
+basket: worst_of
+
+market:
+  rate: 2.5%
+  issuer_spread: 0.8%
+
+coupon:
+  type: conditional      # payé seulement si le worst-of >= barrière coupon
+  rate: 8%               # par an (2 % par trimestre) — sera recalculé si target_price est donné
+  barrier: 65%
+  memory: true           # les coupons manqués sont récupérés plus tard
+
+autocall:
+  barrier: 100%
+  start: 4               # rappel possible à partir de 1 an
+  stepdown: 1%           # la barrière baisse de 1 % par trimestre
+  floor: 80%
+
+redemption:
+  type: barrier
+  barrier: 60%
+  monitoring: european   # observée seulement à maturité
+
+pricing:
+  paths: 20000
+  steps_per_year: 52
+  target_price: 98%      # prix cible (100 % − 2 % de marge) : l'outil résout le coupon

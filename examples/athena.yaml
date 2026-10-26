@@ -1,0 +1,19 @@
+# Athena (autocall "snowball") sur l'Euro Stoxx 50
+# Le coupon n'est versé qu'au moment du rappel : il s'accumule (1 coupon par année écoulée).
+notional: 1000
+maturity: 8
+frequency: annual
+underlyings:
+  - {name: Euro Stoxx 50, vol: 18%, div: 3.2%}
+market: {rate: 2.5%, issuer_spread: 0.8%}
+coupon:
+  type: snowball        # coupon cumulé payé seulement au rappel (ou à maturité si >= barrière)
+  rate: 7%
+autocall:
+  barrier: 100%
+  start: 1
+redemption:
+  type: barrier
+  barrier: 60%
+  monitoring: european
+pricing: {target_price: 98%}
