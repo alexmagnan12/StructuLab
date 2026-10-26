@@ -86,7 +86,7 @@ def _segments(t):
 
 
 def _topic(seg):
-    if re.search(r"coupon|rendement|interet", seg):
+    if re.search(r"coupon|coupo\b|rendement|interet", seg):
         return "coupon"
     if re.search(r"rappel|autocall|anticip|rappelable|degressi|step.?down", seg):
         return "autocall"
@@ -178,6 +178,14 @@ def parse_text(text: str):
             elif re.search(r"memoire|rattrap|recupere", seg):
                 coupon["memory"] = True
             for v, s, e in pcts:
+                # un pourcentage lié à la protection ou au rappel, écrit dans la même phrase que le coupon
+                if _before(seg, s, r"(protection|protege|capital|perte|baisse|chute)", 20):
+                    cap["barrier"] = 1 - abs(v) if (v < 0 or _before(seg, s, r"(baisse|chute|perte)", 15)) else v
+                    continue
+                if _before(seg, s, r"(rappel|anticip|autocall)", 25):
+                    ac["present"] = True
+                    ac["barrier"] = v
+                    continue
                 per = {"par trimestre": 4, "/ ?trimestre": 4, "par semestre": 2, "par mois": 12, "mensuel": 12}
                 mult = next((k for p, k in per.items() if _after(seg, e, p)), None)
                 if mult:
@@ -227,6 +235,12 @@ def parse_text(text: str):
                 elif _before(seg, s, r"(au-dessus|superieur|>=|barriere|seuil|jusqu'a|protection|protege|sous|"
                                      r"niveau|au moins)"):
                     cap["barrier"] = v
+
+    # capital garanti écrit n'importe où dans le texte
+    if re.search(r"capital\s+(est\s+)?(integralement\s+)?garanti|garantie?\s+(du|en|de)\s+capital|"
+                 r"capital\s+(protege|garanti)\s+a\s+100|protection\s+(du\s+|en\s+)?capital\s+(garanti|totale|"
+                 r"integrale|a\s+100)|100\s*%\s*(du\s+capital\s+)?garanti", t) and cap["barrier"] is None:
+        cap["full"] = True
 
     # --- mise en forme ------------------------------------------------------------------------------
     spec = {"maturity": maturity, "frequency": freq_name, "underlyings": unders}
@@ -291,7 +305,11 @@ def parse_text(text: str):
                                                  f"l'observation {a['start']}"
                            + (f", barrière baissant de {fp(a['stepdown'], 1)} par date" if a["stepdown"] else "")))
     elif coupon["type"] == "snowball":
-        raise ParseError("Un coupon accumulé (Athena) suppose un rappel automatique : précisez-le.")
+        # un coupon accumulé n'a de sens qu'avec un rappel : on en ajoute un, à 100 % chaque année
+        spec["autocall"] = {"barrier": 1.0, "start": freq, "stepdown": 0.0}
+        assumed.append("Rappel automatique ajouté : coupon accumulé versé si le sous-jacent est au-dessus de 100 % "
+                       "(à partir d'un an)")
+        understood.append(("Rappel automatique", "si ≥ 100 %, chaque année (implicite pour un coupon accumulé)"))
 
     # capital
     if cap["full"]:
