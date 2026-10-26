@@ -91,7 +91,7 @@ PLAIN_BRICKS = [
     ("+", "Une obligation zéro-coupon", "pour rembourser le capital à l'échéance."),
     ("+", "Une digitale par trimestre", "qui paie le coupon si l'indice le plus faible est au-dessus de 65 %."),
     ("±", "Le rappel automatique", "qui arrête le produit dès que le marché est assez haut."),
-    ("−", "Un put à barrière vendu par le client", "c'est ce qui finance le coupon, et c'est là qu'est le risque."),
+    ("−", "Un put à barrière vendu par le client", "si j'ai bien compris, c'est ce qui finance le coupon."),
 ]
 
 PLAIN_RISK = {
@@ -122,15 +122,14 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     # ------------------------------------------------------------- page 1
     st.append(Paragraph("STRUCTULAB · PROJET PERSONNEL", S["small"]))
     st.append(Spacer(1, 4))
-    st.append(Paragraph("Un petit outil pour comprendre les produits structurés", S["h1"]))
+    st.append(Paragraph("Un petit outil pour m'entraîner sur les produits structurés", S["h1"]))
     st.append(Paragraph(f"{AUTHOR} · {DATE}", S["sub"]))
     st.append(Spacer(1, 10))
     st.append(Paragraph(
-        "J'ai construit ce projet pour préparer mes entretiens en structuration. L'idée : écrire un produit en "
-        "français, un peu comme une demande de sales, et voir si l'outil retrouve <b>de quel produit il s'agit</b>, "
-        "<b>comment il se décompose</b> et <b>quel coupon on peut offrir</b>. J'ai développé le code avec l'aide "
-        "d'un assistant IA ; mon travail a surtout été de définir ce que l'outil devait faire et de comprendre "
-        "chaque étape.", ParagraphStyleBig(S)))
+        "J'apprends la structuration en ce moment, et pour m'entraîner j'ai essayé de construire un petit outil : "
+        "à partir d'une description en français, il tente de retrouver le produit, de le décomposer et d'estimer le "
+        "coupon. C'est un projet d'apprentissage, avec sûrement des simplifications et des erreurs. J'ai été aidé "
+        "par un assistant IA pour le code ; j'ai surtout cherché à comprendre chaque étape.", ParagraphStyleBig(S)))
     st.append(Spacer(1, 10))
     st.append(flow_diagram())
 
@@ -152,7 +151,7 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
                                 ("LINEABOVE", (0, 0), (-1, 0), 1.6, ACCENT)]))
     st.append(answer)
     st.append(Spacer(1, 6))
-    st.append(Paragraph("<b>Comment le produit se décompose</b>, côté client :", S["body"]))
+    st.append(Paragraph("<b>Comment je comprends sa décomposition</b>, côté client :", S["body"]))
     st.append(Spacer(1, 3))
     rows = []
     for sign, title, txt in PLAIN_BRICKS:
@@ -163,27 +162,24 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     st.append(PageBreak())
 
     # ------------------------------------------------------------- page 2 : la term sheet générée
-    st.append(Paragraph("Et voici la term sheet que l'outil génère à partir de cette phrase (je n'ai rien retouché) :",
-                        S["small"]))
+    st.append(Paragraph("La term sheet que l'outil génère à partir de cette phrase, sans retouche :", S["small"]))
     st.append(Spacer(1, 6))
     st += termsheet_story(spec, res, S, tmp)
     st.append(PageBreak())
 
     # ------------------------------------------------------------- page 3
-    st.append(Paragraph("Ce que j'ai le plus appris : l'effet du skew", S["h1"]))
+    st.append(Paragraph("Ce qui m'a surpris : l'effet du skew", S["h1"]))
     st.append(Spacer(1, 4))
     st.append(Paragraph(
-        "Ma première version utilisait la même volatilité pour tous les strikes, comme dans Black-Scholes. "
-        "Or sur les actions, la protection contre une forte baisse coûte plus cher : la volatilité implicite est "
-        "plus élevée pour les strikes bas. C'est le <b>skew</b>, et je l'ai ajouté ensuite.", S["body"]))
+        "Ma première version utilisait la même volatilité pour tous les strikes. J'ai ensuite ajouté un skew, "
+        "de façon très simplifiée (ci-dessous, celui que j'ai utilisé pour l'Euro Stoxx 50).", S["body"]))
     st.append(Spacer(1, 6))
     img = smile_chart(spec, os.path.join(tmp, "s.png"))
     wd = CONTENT_W * 0.6
     st.append(Image(img, width=wd, height=wd * charts.FIG_H / charts.FIG_W))
     st.append(Spacer(1, 4))
     st.append(Paragraph(
-        "Dans ce Phoenix, le client vend une protection à 60 %, justement là où la volatilité est la plus chère. "
-        "En comparant les deux versions, l'écart m'a surpris :", S["body"]))
+        "Je m'attendais à un effet sur le coupon, mais pas à un écart aussi grand :", S["body"]))
     st.append(Spacer(1, 5))
     hdr = [Paragraph(x, S["cellb"]) for x in ("", "Sans skew", "Avec skew")]
     rows = [hdr,
@@ -200,27 +196,22 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     st.append(grid_table(rows, [80 * mm, 40 * mm, CONTENT_W - 120 * mm]))
     st.append(Spacer(1, 5))
     st.append(Paragraph(
-        "Je l'explique par deux effets : la protection vendue par le client vaut plus cher, ce qui laisse plus de "
-        "budget pour le coupon ; et comme la volatilité baisse quand le marché monte, le produit est plus souvent "
-        "rappelé tôt. Mon smile est simplifié (même pente pour toutes les maturités), donc l'écart est sans doute "
-        "un peu exagéré, mais le sens de l'effet est le bon.", S["body"]))
+        "Mon interprétation : le client vend une protection à 60 %, là où la volatilité est la plus élevée, donc "
+        "cette protection vaut plus cher et laisse plus de budget pour le coupon ; et le produit serait plus souvent "
+        "rappelé tôt. Mais mon smile garde la même pente pour toutes les maturités, donc je pense que l'écart est "
+        "exagéré, et je ne sais pas bien en mesurer l'ampleur réelle.", S["body"]))
 
-    st.append(Paragraph("Ce que l'outil sait faire pour l'instant", S["h2"]))
-    prods = [("Phoenix", "coupons sous condition, avec ou sans mémoire"),
-             ("Athena", "coupons accumulés, versés à la sortie"),
-             ("Reverse Convertible", "coupon élevé contre un risque de baisse"),
-             ("Warrant", "option cotée avec effet de levier")]
-    half = len(prods) // 2
-    rows = [[Paragraph(f"<b>{a}</b> — {b}", S["cell"]), Paragraph(f"<b>{c}</b> — {d}", S["cell"])]
-            for (a, b), (c, d) in zip(prods[:half], prods[half:])]
-    st.append(grid_table(rows, [CONTENT_W / 2] * 2, header=False))
+    st.append(Paragraph("Les questions que je me pose encore", S["h2"]))
+    for q in ["L'ordre de grandeur de l'effet du skew sur le coupon est-il réaliste pour ce type de Phoenix ?",
+              "Comment le skew est-il pris en compte en pratique : vol locale, vol stochastique, autre chose ?",
+              "Parmi mes simplifications (smile, taux et dividendes fixes, corrélation constante), "
+              "laquelle fausse le plus le résultat ?"]:
+        st.append(Paragraph("• " + q, S["body"]))
+        st.append(Spacer(1, 2))
     st.append(Spacer(1, 6))
-    st.append(Paragraph("Ce que j'aimerais ajouter ensuite : calibrer le skew sur de vraies données de marché, et "
-                        "ajouter des produits avec rappel au gré de l'émetteur (callable).", S["body"]))
-    st.append(Spacer(1, 8))
-    st.append(Paragraph("Projet personnel, à but d'apprentissage. Les paramètres de marché (volatilités, skew, taux, "
-                        "dividendes) sont illustratifs ; les chiffres viennent de 20 000 scénarios simulés.",
-                        S["small"]))
+    st.append(Paragraph("Pour l'instant, l'outil gère les Phoenix, les Athena, les reverse convertibles à barrière et "
+                        "les warrants. Les paramètres de marché sont illustratifs et les chiffres viennent de 20 000 "
+                        "scénarios simulés.", S["small"]))
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
     doc = SimpleDocTemplate(out, pagesize=A4, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=14 * mm,
