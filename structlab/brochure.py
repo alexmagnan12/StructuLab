@@ -88,12 +88,10 @@ def plain_terms(spec, cpn):
 
 
 PLAIN_BRICKS = [
-    ("+", "Une obligation", "elle finance le remboursement du capital à l'échéance."),
-    ("+", "Des « paris » sur chaque trimestre", "chacun paie le coupon si l'indice le plus faible est au-dessus "
-                                                "du seuil : ce sont des options digitales."),
-    ("±", "Une clause de sortie anticipée", "le produit s'arrête dès que le marché est assez haut."),
-    ("−", "Une assurance vendue par le client", "le client vend à la banque une protection contre une forte baisse "
-                                                "(un put à barrière). C'est elle qui finance le coupon."),
+    ("+", "Une obligation zéro-coupon", "pour rembourser le capital à l'échéance."),
+    ("+", "Une digitale par trimestre", "qui paie le coupon si l'indice le plus faible est au-dessus de 65 %."),
+    ("±", "Le rappel automatique", "qui arrête le produit dès que le marché est assez haut."),
+    ("−", "Un put à barrière vendu par le client", "c'est ce qui finance le coupon, et c'est là qu'est le risque."),
 ]
 
 PLAIN_RISK = {
@@ -124,25 +122,28 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     # ------------------------------------------------------------- page 1
     st.append(Paragraph("STRUCTULAB · PROJET PERSONNEL", S["small"]))
     st.append(Spacer(1, 4))
-    st.append(Paragraph("Un assistant de structuration", S["h1"]))
+    st.append(Paragraph("Un petit outil pour comprendre les produits structurés", S["h1"]))
     st.append(Paragraph(f"{AUTHOR} · {DATE}", S["sub"]))
     st.append(Spacer(1, 10))
     st.append(Paragraph(
-        "On décrit un produit structuré en français, comme dans un mail. L'outil dit <b>ce que c'est</b>, <b>de quoi il est "
-        "fait</b>, <b>combien il peut rapporter</b> et <b>ce qui peut mal tourner</b>, puis il prépare une fiche "
-        "produit.", ParagraphStyleBig(S)))
+        "J'ai construit ce projet pour préparer mes entretiens en structuration. L'idée : écrire un produit en "
+        "français, un peu comme une demande de sales, et voir si l'outil retrouve <b>de quel produit il s'agit</b>, "
+        "<b>comment il se décompose</b> et <b>quel coupon on peut offrir</b>. J'ai développé le code avec l'aide "
+        "d'un assistant IA ; mon travail a surtout été de définir ce que l'outil devait faire et de comprendre "
+        "chaque étape.", ParagraphStyleBig(S)))
     st.append(Spacer(1, 10))
     st.append(flow_diagram())
 
-    st.append(Paragraph("Exemple : ce que j'écris", S["h2"]))
+    st.append(Paragraph("Un exemple : la phrase que j'ai tapée", S["h2"]))
     st += request_box(text.replace("\n", " "), S)[:1]
     st.append(Spacer(1, 2))
-    st.append(Paragraph("Je ne donne jamais le nom du produit : seulement ses règles.", S["small"]))
+    st.append(Paragraph("Je ne précise pas le nom du produit, seulement ses règles : c'est à l'outil de le retrouver.",
+                        S["small"]))
     st.append(Paragraph("Ce que l'outil a compris", S["h2"]))
     st.append(grid_table([[Paragraph(a, S["cellb"]), Paragraph(esc(b), S["cell"])] for a, b in understood],
                          [36 * mm, CONTENT_W - 36 * mm], header=False))
 
-    st.append(Paragraph("Ce que l'outil répond", S["h2"]))
+    st.append(Paragraph("Le résultat", S["h2"]))
     answer = Table([[Paragraph("Produit reconnu", S["kpi_l"]), Paragraph("Coupon calculé", S["kpi_l"])],
                     [Paragraph(info["name"], S["kpi_v"]), Paragraph(pct(cpn) + " par an", S["kpi_v"])]],
                    colWidths=[CONTENT_W * 0.62, CONTENT_W * 0.38])
@@ -151,7 +152,7 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
                                 ("LINEABOVE", (0, 0), (-1, 0), 1.6, ACCENT)]))
     st.append(answer)
     st.append(Spacer(1, 6))
-    st.append(Paragraph("<b>De quoi il est fait</b>, vu par le client :", S["body"]))
+    st.append(Paragraph("<b>Comment le produit se décompose</b>, côté client :", S["body"]))
     st.append(Spacer(1, 3))
     rows = []
     for sign, title, txt in PLAIN_BRICKS:
@@ -162,28 +163,27 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     st.append(PageBreak())
 
     # ------------------------------------------------------------- page 2 : la term sheet générée
-    st.append(Paragraph("Ce que l'outil produit : la term sheet, générée automatiquement à partir de la phrase de la "
-                        "page 1, sans aucune retouche.", S["small"]))
+    st.append(Paragraph("Et voici la term sheet que l'outil génère à partir de cette phrase (je n'ai rien retouché) :",
+                        S["small"]))
     st.append(Spacer(1, 6))
     st += termsheet_story(spec, res, S, tmp)
     st.append(PageBreak())
 
     # ------------------------------------------------------------- page 3
-    st.append(Paragraph("Pourquoi le skew change tout", S["h1"]))
+    st.append(Paragraph("Ce que j'ai le plus appris : l'effet du skew", S["h1"]))
     st.append(Spacer(1, 4))
     st.append(Paragraph(
-        "Sur les marchés actions, une assurance contre une forte baisse coûte plus cher qu'une option sur la hausse : "
-        "les investisseurs ont plus peur d'un krach qu'ils n'espèrent un envol. La volatilité implicite est donc "
-        "plus élevée pour les strikes bas. C'est le <b>skew</b>.", S["body"]))
+        "Ma première version utilisait la même volatilité pour tous les strikes, comme dans Black-Scholes. "
+        "Or sur les actions, la protection contre une forte baisse coûte plus cher : la volatilité implicite est "
+        "plus élevée pour les strikes bas. C'est le <b>skew</b>, et je l'ai ajouté ensuite.", S["body"]))
     st.append(Spacer(1, 6))
     img = smile_chart(spec, os.path.join(tmp, "s.png"))
     wd = CONTENT_W * 0.6
     st.append(Image(img, width=wd, height=wd * charts.FIG_H / charts.FIG_W))
     st.append(Spacer(1, 4))
     st.append(Paragraph(
-        "Dans ce produit, le client vend une protection à 60 %, exactement là où le skew rend la volatilité la plus "
-        "chère. Si on ignore le skew, on sous-estime ce que vaut cette protection, donc le coupon qu'on peut "
-        "offrir. L'outil peut tourner avec ou sans skew :", S["body"]))
+        "Dans ce Phoenix, le client vend une protection à 60 %, justement là où la volatilité est la plus chère. "
+        "En comparant les deux versions, l'écart m'a surpris :", S["body"]))
     st.append(Spacer(1, 5))
     hdr = [Paragraph(x, S["cellb"]) for x in ("", "Sans skew", "Avec skew")]
     rows = [hdr,
@@ -200,10 +200,12 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     st.append(grid_table(rows, [80 * mm, 40 * mm, CONTENT_W - 120 * mm]))
     st.append(Spacer(1, 5))
     st.append(Paragraph(
-        "Deux effets jouent dans le même sens : la protection vendue par le client vaut plus cher, et, parce que la "
-        "volatilité baisse quand le marché monte, le produit est plus souvent remboursé tôt.", S["body"]))
+        "Je l'explique par deux effets : la protection vendue par le client vaut plus cher, ce qui laisse plus de "
+        "budget pour le coupon ; et comme la volatilité baisse quand le marché monte, le produit est plus souvent "
+        "rappelé tôt. Mon smile est simplifié (même pente pour toutes les maturités), donc l'écart est sans doute "
+        "un peu exagéré, mais le sens de l'effet est le bon.", S["body"]))
 
-    st.append(Paragraph("Les produits que l'outil sait traiter", S["h2"]))
+    st.append(Paragraph("Ce que l'outil sait faire pour l'instant", S["h2"]))
     prods = [("Phoenix", "coupons sous condition, avec ou sans mémoire"),
              ("Athena", "coupons accumulés, versés à la sortie"),
              ("Reverse Convertible", "coupon élevé contre un risque de baisse"),
@@ -212,9 +214,12 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
     rows = [[Paragraph(f"<b>{a}</b> — {b}", S["cell"]), Paragraph(f"<b>{c}</b> — {d}", S["cell"])]
             for (a, b), (c, d) in zip(prods[:half], prods[half:])]
     st.append(grid_table(rows, [CONTENT_W / 2] * 2, header=False))
+    st.append(Spacer(1, 6))
+    st.append(Paragraph("Ce que j'aimerais ajouter ensuite : calibrer le skew sur de vraies données de marché, et "
+                        "ajouter des produits avec rappel au gré de l'émetteur (callable).", S["body"]))
     st.append(Spacer(1, 8))
-    st.append(Paragraph("Document pédagogique. Les paramètres de marché (volatilités, skew, taux, dividendes) sont "
-                        "illustratifs ; les chiffres viennent d'une simulation de 20 000 scénarios de marché.",
+    st.append(Paragraph("Projet personnel, à but d'apprentissage. Les paramètres de marché (volatilités, skew, taux, "
+                        "dividendes) sont illustratifs ; les chiffres viennent de 20 000 scénarios simulés.",
                         S["small"]))
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
