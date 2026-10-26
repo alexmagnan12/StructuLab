@@ -1,6 +1,12 @@
 # StructuLab
 
-Un petit outil pour comprendre les produits structurés : on décrit les règles d'un produit, et l'outil dit de quel produit il s'agit, le décompose en briques simples, calcule le coupon qu'on peut offrir et génère une fiche produit en PDF.
+Je suis étudiant, actuellement en stage chez Convera où je travaille sur le pricing de produits FX pour des clients corporate (KIKO, TARF, accumulateurs), et je cherche un stage en structuration cross-asset.
+
+J'ai lancé ce projet pour préparer mes entretiens. En lisant *Exotic Options and Hybrids* (Bouzoubaa & Osseiran), je voulais vérifier que je savais vraiment faire ce qu'on attend d'un structureur : partir des règles d'un produit, le décomposer en briques simples, puis comprendre d'où vient le coupon et quels risques prend la banque.
+
+L'outil fonctionne ainsi : on décrit un produit (coupon, rappel, barrière...), il reconnaît de quel produit il s'agit, le décompose, calcule le coupon qu'on peut offrir pour une marge donnée et génère une fiche produit en PDF. Ce qui m'a le plus appris, c'est l'effet du skew : sur un Phoenix worst-of, le coupon passe d'environ 7 % à 11 % quand on en tient compte.
+
+Il prolonge mon projet précédent de [pricing d'options par différences finies](https://github.com/alexmagnan12/option-pricing-finite-differences). J'ai développé le code avec l'aide d'un assistant IA ; j'ai défini ce que l'outil devait faire et travaillé à comprendre chaque étape.
 
 Présentation en 3 pages : [output/StructLab_en_3_pages.pdf](output/StructLab_en_3_pages.pdf)
 
