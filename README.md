@@ -8,7 +8,7 @@ L'outil fonctionne ainsi : on décrit un produit (coupon, rappel, barrière...),
 
 Il prolonge mon projet précédent de [pricing d'options par différences finies](https://github.com/alexmagnan12/option-pricing-finite-differences). J'ai développé le code avec l'aide d'un assistant IA ; j'ai défini ce que l'outil devait faire et travaillé à comprendre chaque étape.
 
-Présentation en 3 pages : [output/StructLab_en_3_pages.pdf](output/StructLab_en_3_pages.pdf)
+Présentation en 3 pages : [output/StructuLab_en_3_pages.pdf](output/StructuLab_en_3_pages.pdf)
 
 ## Produits traités
 

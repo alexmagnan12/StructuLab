@@ -212,7 +212,7 @@ def _footer(canvas, doc):
     canvas.saveState()
     canvas.setFont("Sans", 7)
     canvas.setFillColor(MUTED)
-    canvas.drawString(MARGIN, 9 * mm, "StructLab — analyse de produits structurés")
+    canvas.drawString(MARGIN, 9 * mm, "StructuLab — analyse de produits structurés")
     canvas.drawRightString(PAGE_W - MARGIN, 9 * mm, f"{doc.page}")
     canvas.restoreState()
 
@@ -220,6 +220,6 @@ def _footer(canvas, doc):
 def build_termsheet(spec, res, out_path, request=None):
     doc = SimpleDocTemplate(out_path, pagesize=A4, leftMargin=MARGIN, rightMargin=MARGIN,
                             topMargin=14 * mm, bottomMargin=16 * mm, title="Fiche produit",
-                            author="StructLab")
+                            author="StructuLab")
     doc.build(termsheet_story(spec, res, request=request), onFirstPage=_footer, onLaterPages=_footer)
     return out_path

@@ -18,7 +18,7 @@ from .identify import identify, pct, risk_reading
 from .report import (ACCENT, BAD, CONTENT_W, GOOD, INK, LINE, MARGIN, MUTED, PANEL, _footer, grid_table, kpi_row,
                      styles)
 from .parser import parse_text
-from .report import request_box
+from .report import request_box, termsheet_story
 from .spec import spec_from_dict
 
 AUTHOR = "Alexandre Magnan-Dupont"
@@ -106,7 +106,7 @@ PLAIN_RISK = {
 }
 
 
-def build(out="output/StructLab_en_3_pages.pdf"):
+def build(out="output/StructuLab_en_3_pages.pdf"):
     S = styles()
     tmp = tempfile.mkdtemp()
     text = open(EXAMPLE, encoding="utf-8").read().strip()
@@ -122,7 +122,7 @@ def build(out="output/StructLab_en_3_pages.pdf"):
 
     st = []
     # ------------------------------------------------------------- page 1
-    st.append(Paragraph("STRUCTLAB · PROJET PERSONNEL", S["small"]))
+    st.append(Paragraph("STRUCTULAB · PROJET PERSONNEL", S["small"]))
     st.append(Spacer(1, 4))
     st.append(Paragraph("Un assistant de structuration", S["h1"]))
     st.append(Paragraph(f"{AUTHOR} · {DATE}", S["sub"]))
@@ -161,44 +161,11 @@ def build(out="output/StructLab_en_3_pages.pdf"):
     st.append(grid_table(rows, [7 * mm, CONTENT_W - 7 * mm], header=False))
     st.append(PageBreak())
 
-    # ------------------------------------------------------------- page 2
-    st.append(Paragraph("Le résultat en un coup d'œil", S["h1"]))
+    # ------------------------------------------------------------- page 2 : la term sheet générée
+    st.append(Paragraph("Ce que l'outil produit : la term sheet, générée automatiquement à partir de la phrase de la "
+                        "page 1, sans aucune retouche.", S["small"]))
     st.append(Spacer(1, 6))
-    st.append(kpi_row([(pct(cpn) + " / an", "Coupon qui laisse 2 % de marge à la banque"),
-                       (f"{res['expected_life']:.1f} ans".replace(".", ","), "Durée de vie moyenne"),
-                       (pct(1 - res["p_maturity"], 0), "Chance d'être remboursé avant l'échéance"),
-                       (pct(res["p_loss"], 0), "Risque de perdre une partie du capital")], S))
-    st.append(Spacer(1, 8))
-    w = CONTENT_W / 2 - 2 * mm
-    h = w * charts.FIG_H / charts.FIG_W
-    i1 = charts.maturity_profile(spec, res, os.path.join(tmp, "p.png"))
-    i2 = charts.lifetime(spec, res, os.path.join(tmp, "l.png"))
-    g = Table([[Image(i1, width=w, height=h), Image(i2, width=w, height=h)]], colWidths=[CONTENT_W / 2] * 2)
-    g.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 0)]))
-    st.append(g)
-    st.append(Paragraph("À gauche : ce que touche le client à l'échéance selon le niveau final. À droite : la plupart "
-                        "des produits s'arrêtent tôt, à la première date de remboursement anticipé.", S["small"]))
-
-    st.append(Paragraph("Quatre scénarios pour l'expliquer à un client", S["h2"]))
-    labels = {"Hausse rapide": "Les marchés montent", "Hausse progressive": "Les marchés montent lentement",
-              "Baisse modérée": "Les marchés baissent de 15 %", "Krach": "Krach de 55 %"}
-    rows = [[Paragraph(x, S["cellb"]) for x in ("Si...", "Que se passe-t-il ?", "Le client récupère")]]
-    for name, sc in res["scenarios"].items():
-        key = name.split(" (")[0]
-        col = GOOD if sc["total"] >= 1 else BAD
-        what = sc["fin"].split(" (")[0].replace("Rappel automatique", "Remboursé par anticipation") \
-            .replace("Maturité", "Va jusqu'à l'échéance")
-        rows.append([Paragraph(labels.get(key, key), S["cell"]),
-                     Paragraph(f"{what} ; coupons reçus : {pct(sc['coupons'])}", S["cellm"]),
-                     Paragraph(f'<font color="{col.hexval()}"><b>{pct(sc["total"])}</b></font> du capital',
-                               S["cell"])])
-    st.append(grid_table(rows, [52 * mm, 88 * mm, CONTENT_W - 140 * mm]))
-
-    st.append(Paragraph("Ce que ça veut dire pour la banque", S["h2"]))
-    for label, _, ch in res["sensitivities"]:
-        if label in PLAIN_RISK:
-            st.append(Paragraph("• " + PLAIN_RISK[label], S["body"]))
-            st.append(Spacer(1, 2))
+    st += termsheet_story(spec, res, S, tmp)
     st.append(PageBreak())
 
     # ------------------------------------------------------------- page 3
@@ -252,7 +219,7 @@ def build(out="output/StructLab_en_3_pages.pdf"):
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
     doc = SimpleDocTemplate(out, pagesize=A4, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=14 * mm,
-                            bottomMargin=16 * mm, title="StructLab — un assistant de structuration", author=AUTHOR)
+                            bottomMargin=16 * mm, title="StructuLab — un assistant de structuration", author=AUTHOR)
     doc.build(st, onFirstPage=_footer, onLaterPages=_footer)
     return out
 
