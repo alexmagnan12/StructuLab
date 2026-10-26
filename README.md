@@ -1,4 +1,4 @@
-# StructLab — un assistant de structuration
+# StructuLab — un assistant de structuration
 
 > **En 3 pages :** [output/StructLab_en_3_pages.pdf](output/StructLab_en_3_pages.pdf) · **Exemple de fiche générée :** [output/phoenix_memoire.pdf](output/phoenix_memoire.pdf)
 
