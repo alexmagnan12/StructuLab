@@ -1,4 +1,4 @@
-# StructuLab
+# TermSheet Builder
 
 Je suis étudiant, actuellement en stage chez Convera comme assistant structuration sur les dérivés FX : je construis des solutions de couverture pour des clients corporate et je price des dérivés vanilles et exotiques (forwards, KIKO, TARF, accumulateurs). Je cherche un stage en structuration cross-asset.
 
@@ -8,7 +8,7 @@ L'outil fonctionne ainsi : on décrit un produit en français (coupon, rappel, b
 
 Il prolonge mon projet précédent de [pricing d'options par différences finies](https://github.com/alexmagnan12/option-pricing-finite-differences). J'ai développé le code avec l'aide d'un assistant IA ; j'ai défini ce que l'outil devait faire et travaillé à comprendre chaque étape.
 
-Présentation en 3 pages : [output/StructuLab_en_3_pages.pdf](output/StructuLab_en_3_pages.pdf)
+Présentation en 3 pages : [output/TermSheet_Builder_en_3_pages.pdf](output/TermSheet_Builder_en_3_pages.pdf)
 
 ## Produits traités
 
@@ -24,7 +24,7 @@ Le skew peut être pris en compte (vol locale déduite d'un smile simple).
 On décrit le produit **en français**, sans donner son nom :
 
 ```
-python -m structlab "Produit 5 ans sur le CAC 40, coupon versé chaque trimestre si le CAC est au-dessus de 70 %, remboursement anticipé à partir de 1 an si le CAC est au-dessus de 100 %, capital protégé jusqu'à une baisse de 40 %"
+python -m termsheet "Produit 5 ans sur le CAC 40, coupon versé chaque trimestre si le CAC est au-dessus de 70 %, remboursement anticipé à partir de 1 an si le CAC est au-dessus de 100 %, capital protégé jusqu'à une baisse de 40 %"
 ```
 
 L'outil affiche ce qu'il a compris (et les valeurs par défaut qu'il a prises), reconnaît le produit, le décompose, calcule le coupon et crée la term sheet dans `output/`.
@@ -32,9 +32,9 @@ L'outil affiche ce qu'il a compris (et les valeurs par défaut qu'il a prises), 
 Autres façons de l'utiliser :
 
 ```
-python -m structlab                                   # mode interactif : on tape la description
-python -m structlab examples/textes/phoenix.txt       # description dans un fichier texte
-python -m structlab examples/phoenix_memoire.yaml     # description détaillée, paramètre par paramètre
+python -m termsheet                                   # mode interactif : on tape la description
+python -m termsheet examples/textes/phoenix.txt       # description dans un fichier texte
+python -m termsheet examples/phoenix_memoire.yaml     # description détaillée, paramètre par paramètre
 ```
 
 Ce que l'outil sait lire dans le texte : les sous-jacents (principaux indices et quelques actions), la durée, la fréquence d'observation, le coupon (fixe, conditionnel, avec mémoire, accumulé), le remboursement anticipé (niveau, première date, barrière dégressive), la protection du capital (niveau, observée à l'échéance ou en continu), la marge et la corrélation. Si un coupon est donné sans marge, l'outil calcule la valeur du produit ; sinon il cherche le coupon qui respecte la marge (2 % par défaut).

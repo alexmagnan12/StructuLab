@@ -1,4 +1,4 @@
-"""StructuLab : identification, décomposition et pricing de produits structurés."""
+"""TermSheet Builder : identification, décomposition et pricing de produits structurés."""
 from .analytics import analyze
 from .report import build_termsheet
 from .spec import load_spec

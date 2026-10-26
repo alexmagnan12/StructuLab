@@ -1,4 +1,4 @@
-"""Présentation courte (3 pages), sans code : python -m structlab.brochure"""
+"""Présentation courte (3 pages), sans code : python -m termsheet.brochure"""
 from __future__ import annotations
 
 import os
@@ -104,7 +104,7 @@ PLAIN_RISK = {
 }
 
 
-def build(out="output/StructuLab_en_3_pages.pdf"):
+def build(out="output/TermSheet_Builder_en_3_pages.pdf"):
     S = styles()
     tmp = tempfile.mkdtemp()
     text = open(EXAMPLE, encoding="utf-8").read().strip()
@@ -120,12 +120,12 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
 
     st = []
     # ------------------------------------------------------------- page 1
-    st.append(Paragraph("STRUCTULAB · PROJET PERSONNEL", S["small"]))
+    st.append(Paragraph("TERMSHEET BUILDER · PROJET PERSONNEL", S["small"]))
     st.append(Spacer(1, 4))
     st.append(Paragraph("Un petit outil pour m'entraîner sur les produits structurés", S["h1"]))
     st.append(Paragraph(f"{AUTHOR} · {DATE} · "
-                        f'<link href="https://github.com/alexmagnan12/StructuLab" color="#2F5D9E">'
-                        f"github.com/alexmagnan12/StructuLab</link>", S["sub"]))
+                        f'<link href="https://github.com/alexmagnan12/TermSheet-Builder" color="#2F5D9E">'
+                        f"github.com/alexmagnan12/TermSheet-Builder</link>", S["sub"]))
     st.append(Spacer(1, 10))
     st.append(Paragraph(
         "Pour préparer mes entretiens en structuration, j'ai construit un outil qui part d'une description en "
@@ -218,7 +218,7 @@ def build(out="output/StructuLab_en_3_pages.pdf"):
 
     os.makedirs(os.path.dirname(out), exist_ok=True)
     doc = SimpleDocTemplate(out, pagesize=A4, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=14 * mm,
-                            bottomMargin=16 * mm, title="StructuLab — un assistant de structuration", author=AUTHOR)
+                            bottomMargin=16 * mm, title="TermSheet Builder", author=AUTHOR)
     doc.build(st, onFirstPage=_footer, onLaterPages=_footer)
     return out
 

@@ -1,5 +1,5 @@
 {
-  "name": "StructuLab",
+  "name": "TermSheet Builder",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "postCreateCommand": "pip install -r requirements.txt",
   "customizations": {

@@ -1,9 +1,9 @@
 """Ligne de commande.
 
-    python -m structlab                                   # mode interactif : on tape la description
-    python -m structlab "Phoenix 5 ans sur le CAC 40, coupon si le CAC est au-dessus de 70 %..."
-    python -m structlab examples/textes/phoenix.txt       # description dans un fichier texte
-    python -m structlab examples/phoenix_memoire.yaml     # description détaillée (YAML)
+    python -m termsheet                                   # mode interactif : on tape la description
+    python -m termsheet "Phoenix 5 ans sur le CAC 40, coupon si le CAC est au-dessus de 70 %..."
+    python -m termsheet examples/textes/phoenix.txt       # description dans un fichier texte
+    python -m termsheet examples/phoenix_memoire.yaml     # description détaillée (YAML)
 """
 from __future__ import annotations
 
@@ -80,7 +80,7 @@ def run_text(text, out=None, outdir="output", pdf=True):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(
-        prog="structlab",
+        prog="termsheet",
         description="Décrivez un produit structuré en français : l'outil le reconnaît, le décompose, "
                     "calcule le coupon et génère une term sheet.")
     ap.add_argument("entree", nargs="*", help="la description en texte (entre guillemets), un fichier .txt, "
