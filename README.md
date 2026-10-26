@@ -1,6 +1,6 @@
 # StructuLab
 
-Je suis étudiant, actuellement en stage chez Convera où je travaille sur le pricing de produits FX pour des clients corporate (KIKO, TARF, accumulateurs), et je cherche un stage en structuration cross-asset.
+Je suis étudiant, actuellement en stage chez Convera comme assistant structuration sur les dérivés FX : je construis des solutions de couverture pour des clients corporate et je price des dérivés vanilles et exotiques (forwards, KIKO, TARF, accumulateurs). Je cherche un stage en structuration cross-asset.
 
 J'ai lancé ce projet pour préparer mes entretiens. En lisant *Exotic Options and Hybrids* (Bouzoubaa & Osseiran), je voulais vérifier que je savais vraiment faire ce qu'on attend d'un structureur : partir des règles d'un produit, le décomposer en briques simples, puis comprendre d'où vient le coupon et quels risques prend la banque.
 
